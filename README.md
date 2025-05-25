@@ -73,7 +73,7 @@
 ```python
 self.api_key = tk.StringVar(value="")     # 请在引号之间输入百度AI提供的api_key
 self.secret_key = tk.StringVar(value="")  # 请在引号之间输入百度AI提供的secret_key
-self.mqtt_broker = tk.StringVar(value="") # 请在引号之间输入MQTT服务器地址，要与mqtt.h的一致
+self.mqtt_broker = tk.StringVar(value="") # 请在引号之间输入MQTT服务器地址
 ```
 
 4. **编译烧录**
