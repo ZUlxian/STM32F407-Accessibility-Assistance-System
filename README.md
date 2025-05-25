@@ -4,7 +4,7 @@
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 ![Platform](https://img.shields.io/badge/Platform-STM32F407-green.svg)
-![Status](https://img.shields.io/badge/Status-Active%20Development-orange.svg)
+![Status](https://img.shields.io/badge/Status-Archived-red.svg)
 ![Language](https://img.shields.io/badge/Language-C-blue.svg)
 
 </div>
