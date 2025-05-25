@@ -230,7 +230,7 @@ graph TD
 
 **🔗 让更多人了解无障碍技术的重要性**
 
-[![Star History Chart](https://api.star-history.com/svg?repos=ZUlxian/STM32F407-Accessibility-System&type=Date)](https://star-history.com/#ZUlxian/STM32F407-Accessibility-System&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=ZUlxian/STM32F407-Accessibility-System&type=Date)](https://www.star-history.com/#ZUlxian/STM32F407-Accessibility-System&Date)
 
 ---
 
