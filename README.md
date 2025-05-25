@@ -77,7 +77,7 @@ self.mqtt_broker = tk.StringVar(value="") # 请在引号之间输入MQTT服务�
 ```
 4. **配置Python端环境**
    - 新建一个项目，然后添加STM32F407-Accessibility-Assistance-System.py这个文件
-   -进入终端输入以下代码
+   - 进入终端输入以下代码
    ```c
    pip install requests edge-tts paho-mqtt Pillow
    ```
