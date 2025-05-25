@@ -212,7 +212,7 @@ graph TD
 - [STM32 HAL Library](https://github.com/STMicroelectronics/STM32CubeF4) - STM32官方HAL库
 - [ESP8266 Arduino Core](https://github.com/esp8266/Arduino) - ESP8266开发框架
 - [Eclipse Paho MQTT](https://www.eclipse.org/paho/) - MQTT通信协议
-- [百度AI开放平台](https://ai.baidu.com/) - 图像识别
+- [百度AI开放平台](https://ai.baidu.com/) - 图像识别AI
 
 ---
 
