@@ -137,19 +137,34 @@ graph TD
    - 如需要配置STM32CubeMX，可直接打开.ioc进行配置
 
 3. **需要修改的地方**
-   - 请打开mqtt.h文件定位到以下位置并编辑（这个是让ESP8266与MQTT服务器进行连接通信）
-   - #define MQTT_BROKER        ""    // 请在""之间输入MQTT服务器
-   - #define MQTT_PORT          1883  // 标准MQTT端口，若需要使用SSL加密连接则修改为8883
-   - #define MQTT_CLIENT_ID     ""    // 请在""之间输入客户端ID
-   - #define MQTT_USERNAME      ""    // 请在""之间输入用户名，可以不填
-   - #define MQTT_PASSWORD      ""    // 请在""之间输入密码，可以不填
-   - 请打开esp8266.h文件定位到以下位置并编辑（这个是让ESP8266连接到你的WIFI）
-   - #define WIFI_SSID       ""       /* 请在""之间输入WiFi名称 */
-   - #define WIFI_PASSWORD   ""       /* 请在""之间输入WiFi密码 */
-   - 请打开STM32F407-Accessibility-Assistance-System.py文件定位到以下位置并编辑
-   - self.api_key = tk.StringVar(value="")    # 请在""之间输入百度AI提供的api_key
-   - self.secret_key = tk.StringVar(value="") # 请在""之间输入百度AI提供的secret_key
-   - self.mqtt_broker = tk.StringVar(value="")# 请在""之间输入MQTT服务器
+
+**mqtt.h文件配置** (ESP8266与MQTT服务器进行连接通信)
+
+请修改以下MQTT服务器配置信息：
+```c
+#define MQTT_BROKER ""    // 请在引号之间输入MQTT服务器地址
+#define MQTT_PORT 1883    // 标准MQTT端口，若需要使用SSL加密连接则修改为8883
+#define MQTT_CLIENT_ID "" // 请在引号之间输入客户端ID
+#define MQTT_USERNAME ""  // 请在引号之间输入用户名，可以不填
+#define MQTT_PASSWORD ""  // 请在引号之间输入密码，可以不填
+```
+
+**esp8266.h文件配置** (ESP8266连接到你的WIFI)
+
+请修改WiFi连接配置：
+```c
+#define WIFI_SSID ""     // 请在引号之间输入WiFi名称
+#define WIFI_PASSWORD "" // 请在引号之间输入WiFi密码
+```
+
+**STM32F407-Accessibility-Assistance-System.py文件配置**
+
+请修改API密钥配置：
+```python
+self.api_key = tk.StringVar(value="")     # 请在引号之间输入百度AI提供的api_key
+self.secret_key = tk.StringVar(value="")  # 请在引号之间输入百度AI提供的secret_key
+self.mqtt_broker = tk.StringVar(value="") # 请在引号之间输入MQTT服务器地址
+```
 
 4. **编译烧录**
    - 使用Keil MDK打开项目
