@@ -75,8 +75,14 @@ self.api_key = tk.StringVar(value="")     # 请在引号之间输入百度AI提�
 self.secret_key = tk.StringVar(value="")  # 请在引号之间输入百度AI提供的secret_key
 self.mqtt_broker = tk.StringVar(value="") # 请在引号之间输入MQTT服务器地址
 ```
+4. **配置Python端环境**
+   - 新建一个项目，然后添加STM32F407-Accessibility-Assistance-System.py这个文件
+   -进入终端输入以下代码
+   ```c
+   pip install requests edge-tts paho-mqtt Pillow
+   ```
 
-4. **编译烧录**
+5. **编译烧录**
    - 使用Keil MDK打开项目或者直接打开STM32F407-Accessibility-Assistance-System.uvprojx
    - 连接ST-Link调试器
    - 按F7编译
