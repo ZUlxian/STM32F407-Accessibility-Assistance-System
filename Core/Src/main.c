@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file           : main.c
-  * @brief          : Í¼Ïñ²É¼¯ÓëMQTT´«ÊäÏµÍ³
+  * @brief          : åŸºäºSTM32çš„ç›²äººæ— éšœç¢è¾…åŠ©ç³»ç»Ÿ
   ******************************************************************************
   */
 
@@ -30,90 +30,90 @@
 /* Private defines -----------------------------------------------------------*/
 #define IMAGE_FILENAME "0:/IMAGE.JPG" 
 
-// ÏÔÊ¾¸ß¶È
+// æ˜¾ç¤ºé«˜åº¦
 #define DISPLAY_HEIGHT 240
 
-// µ÷ÊÔĞÅÏ¢ÏÔÊ¾µÄÆğÊ¼ĞĞ
+// è°ƒè¯•ä¿¡æ¯æ˜¾ç¤ºçš„èµ·å§‹è¡Œ
 #define DEBUG_START_Y 160
 
-// °´Å¥²Ù×÷Ïà¹Ø
-#define BUTTON_LONGPRESS_TIME 2000  // ³¤°´Ê±¼äãĞÖµ(ºÁÃë)
-#define BUTTON_DEBOUNCE_TIME  50    // °´Å¥Ïû¶¶Ê±¼ä(ºÁÃë)
+// æŒ‰é’®æ“ä½œç›¸å…³
+#define BUTTON_LONGPRESS_TIME 2000  // é•¿æŒ‰æ—¶é—´é˜ˆå€¼(æ¯«ç§’)
+#define BUTTON_DEBOUNCE_TIME  50    // æŒ‰é’®æ¶ˆæŠ–æ—¶é—´(æ¯«ç§’)
 
-// ¾àÀëãĞÖµ
-#define DISTANCE_CLOSE    15.0f  // ·Ç³£½üµÄ¾àÀëãĞÖµ(ÀåÃ×)
-#define DISTANCE_MEDIUM   50.0f  // ÖĞµÈ¾àÀëãĞÖµ(ÀåÃ×)
-#define DISTANCE_MAX     100.0f  // ×î´óÓĞĞ§¾àÀëãĞÖµ(ÀåÃ×)
+// è·ç¦»é˜ˆå€¼
+#define DISTANCE_CLOSE    15.0f  // éå¸¸è¿‘çš„è·ç¦»é˜ˆå€¼(å˜ç±³)
+#define DISTANCE_MEDIUM   50.0f  // ä¸­ç­‰è·ç¦»é˜ˆå€¼(å˜ç±³)
+#define DISTANCE_MAX     100.0f  // æœ€å¤§æœ‰æ•ˆè·ç¦»é˜ˆå€¼(å˜ç±³)
 
 /* Private typedefs -----------------------------------------------------------*/
 typedef enum {
-  SYSTEM_STATE_PARAM_DISPLAY,  // ²ÎÊıÏÔÊ¾Ä£Ê½
-  SYSTEM_STATE_CAMERA_MODE     // Ïà»úÄ£Ê½
+  SYSTEM_STATE_PARAM_DISPLAY,  // å‚æ•°æ˜¾ç¤ºæ¨¡å¼
+  SYSTEM_STATE_CAMERA_MODE     // ç›¸æœºæ¨¡å¼
 } SystemState;
 
 /* Global variables ---------------------------------------------------------*/
-// ½âÂë±äÁ¿
+// è§£ç å˜é‡
 extern uint32_t datanum;
 extern uint8_t ov_rev_ok;
 extern DMA_HandleTypeDef hdma_dcmi;
 extern uint16_t camera_buffer[PIC_WIDTH*PIC_HEIGHT];
 
-// UART±äÁ¿
+// UARTå˜é‡
 UART_HandleTypeDef huart1;
 
-// WiFi±äÁ¿
+// WiFiå˜é‡
 volatile uint8_t wifiConnected = 0;
 volatile char ipAddress[20] = "Updating...";
 volatile int8_t rssiValue = 0;
 volatile uint32_t lastWifiRssiUpdateTick = 0;
 volatile uint32_t lastWifiIpUpdateTick = 0;
 
-// MQTT±äÁ¿
+// MQTTå˜é‡
 volatile uint8_t mqtt_connected = 0;
 volatile uint8_t command_received = 0;
 char command_buffer[128] = {0};
 
-// ÆäËûÈ«¾Ö±äÁ¿
+// å…¶ä»–å…¨å±€å˜é‡
 uint32_t frame_counter = 0;
 uint8_t init_retry_count = 0;
 uint8_t sd_init_status = 0;
 uint8_t fatfs_init_status = 0;
-uint8_t capture_requested = 0;    // ÅÄÕÕÇëÇó±êÖ¾
-uint8_t photo_saved_success = 0;  // ÅÄÕÕ³É¹¦±êÖ¾
-uint32_t success_display_time = 0; // ÅÄÕÕ³É¹¦ÌáÊ¾ÏÔÊ¾Ê±¼ä
-uint32_t photo_save_start_time = 0; // ÅÄÕÕ¿ªÊ¼Ê±¼ä
-uint32_t save_progress_time = 0;   // ±£´æ½ø¶È¸üĞÂÊ±¼ä
-uint32_t current_file_index = 1;   // µ±Ç°ÎÄ¼şË÷Òı
+uint8_t capture_requested = 0;    // æ‹ç…§è¯·æ±‚æ ‡å¿—
+uint8_t photo_saved_success = 0;  // æ‹ç…§æˆåŠŸæ ‡å¿—
+uint32_t success_display_time = 0; // æ‹ç…§æˆåŠŸæç¤ºæ˜¾ç¤ºæ—¶é—´
+uint32_t photo_save_start_time = 0; // æ‹ç…§å¼€å§‹æ—¶é—´
+uint32_t save_progress_time = 0;   // ä¿å­˜è¿›åº¦æ›´æ–°æ—¶é—´
+uint32_t current_file_index = 1;   // å½“å‰æ–‡ä»¶ç´¢å¼•
 uint8_t save_mode = SAVE_MODE_FATFS;
-uint32_t sd_status_check_time = 0; // SD¿¨×´Ì¬¼ì²éÊ±¼ä
-uint8_t mqtt_image_transfer_requested = 0; // MQTTÍ¼Ïñ´«ÊäÇëÇó±êÖ¾
-uint8_t mqtt_image_transfer_in_progress = 0; // MQTTÍ¼Ïñ´«Êä½øĞĞÖĞ±êÖ¾
+uint32_t sd_status_check_time = 0; // SDå¡çŠ¶æ€æ£€æŸ¥æ—¶é—´
+uint8_t mqtt_image_transfer_requested = 0; // MQTTå›¾åƒä¼ è¾“è¯·æ±‚æ ‡å¿—
+uint8_t mqtt_image_transfer_in_progress = 0; // MQTTå›¾åƒä¼ è¾“è¿›è¡Œä¸­æ ‡å¿—
 DMA_HandleTypeDef hdma_spi2_tx;
 DMA_HandleTypeDef hdma_spi3_tx;
 I2S_HandleTypeDef hi2s3;
 
-// ÏµÍ³×´Ì¬±äÁ¿
+// ç³»ç»ŸçŠ¶æ€å˜é‡
 volatile SystemState currentSystemState = SYSTEM_STATE_PARAM_DISPLAY;
-volatile uint8_t systemJustStarted = 1;              // ¸ÕÆô¶¯±êÖ¾
-volatile uint32_t autoModeChangeProtectionTimer = 0; // ·ÀÖ¹×Ô¶¯Ä£Ê½ÇĞ»»
+volatile uint8_t systemJustStarted = 1;              // åˆšå¯åŠ¨æ ‡å¿—
+volatile uint32_t autoModeChangeProtectionTimer = 0; // é˜²æ­¢è‡ªåŠ¨æ¨¡å¼åˆ‡æ¢
 
-// Ä£Ê½ÇĞ»»°´Å¥¹ÜÀí±äÁ¿(PA15)
+// æ¨¡å¼åˆ‡æ¢æŒ‰é’®ç®¡ç†å˜é‡(PA15)
 volatile uint8_t buttonPressed = 0;
 volatile uint32_t buttonPressTick = 0;
 volatile uint8_t buttonLongPressDetected = 0;
 volatile uint8_t buttonStateChanged = 0;
-volatile uint32_t lastButtonChangeTime = 0; // ÓÃÓÚ°´Å¥Ïû¶¶
+volatile uint32_t lastButtonChangeTime = 0; // ç”¨äºæŒ‰é’®æ¶ˆæŠ–
 
-// ÅÄÕÕ°´Å¥¹ÜÀí±äÁ¿(PA0)
+// æ‹ç…§æŒ‰é’®ç®¡ç†å˜é‡(PA0)
 volatile uint8_t cameraButtonPressed = 0;
 volatile uint32_t cameraButtonPressTick = 0;
 
-// ³¬Éù²¨´«¸ĞÆ÷±äÁ¿
+// è¶…å£°æ³¢ä¼ æ„Ÿå™¨å˜é‡
 volatile float frontDistance = 0.0f;
 volatile float sideDistance = 0.0f;
 volatile uint32_t lastDistanceUpdateTick = 0;
 
-// µ÷ÊÔ»º³åÇø
+// è°ƒè¯•ç¼“å†²åŒº
 char debug_buffer[128];
 
 /* Private function prototypes -----------------------------------------------*/
@@ -122,18 +122,18 @@ void MX_GPIO_Init(void);
 static void MX_USART1_UART_Init(void);
 void Setup_SDIO_Interrupts(void);
 
-// WiFiÏà¹Øº¯Êı
+// WiFiç›¸å…³å‡½æ•°
 void InitializeWiFi(void);
 void UpdateWiFiInfoDisplay(void);
 void RestoreWiFiCommunication(void);
 
-// MQTTÏà¹Øº¯Êı
+// MQTTç›¸å…³å‡½æ•°
 void InitializeMQTT(void);
 void CheckMQTTStatus(void);
 void ProcessMQTTCommands(void);
 uint8_t SendImageViaMQTT(const char* filename);
 
-// ÏÔÊ¾ºÍ½çÃæº¯Êı
+// æ˜¾ç¤ºå’Œç•Œé¢å‡½æ•°
 void ShowBootAnimation(void);
 void DisplayParameterScreen(void);
 void UpdateDistanceDisplay(void);
@@ -144,16 +144,16 @@ void Fill_Rectangle(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uin
 void DisplayCameraImage(uint16_t *camera_buf, uint16_t width, uint16_t height);
 void UpdateProgressBar(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint8_t progress, uint16_t color);
 
-// Ä£Ê½Ïà¹Øº¯Êı
+// æ¨¡å¼ç›¸å…³å‡½æ•°
 void ParameterDisplayModeUpdate(void);
 void CameraModeUpdate(void);
 
-// °´Å¥Ïà¹Øº¯Êı
+// æŒ‰é’®ç›¸å…³å‡½æ•°
 void Button_Init(void);
 uint8_t Is_Button_Pressed(void);
 uint8_t Is_Camera_Button_Pressed(void);
 
-// ÆäËû¸¨Öúº¯Êı
+// å…¶ä»–è¾…åŠ©å‡½æ•°
 void Check_DMA_Status(void);
 void Display_DCMI_Status(void);
 void Display_Pixel_Preview(void);
@@ -180,38 +180,38 @@ void MX_I2S3_Init(void)
   }
 }
 /**
-  * @brief ´ÓÏà»úÄ£Ê½ÇĞ»»»Ø²ÎÊıÏÔÊ¾Ä£Ê½Ê±µ÷ÓÃ´Ëº¯Êı»Ö¸´WiFi¹¦ÄÜ
+  * @brief ä»ç›¸æœºæ¨¡å¼åˆ‡æ¢å›å‚æ•°æ˜¾ç¤ºæ¨¡å¼æ—¶è°ƒç”¨æ­¤å‡½æ•°æ¢å¤WiFiåŠŸèƒ½
   */
 void RestoreWiFiCommunication(void) {
     uint8_t retry;
     
-    // ÏÔÊ¾×´Ì¬
+    // æ˜¾ç¤ºçŠ¶æ€
     ST7789_FillRectangle(10, 270, 220, 10, BLACK);
     ST7789_WriteString(10, 270, "Checking ESP8266...", YELLOW, BLACK, 1);
     
-    // ÖØÆôESP8266
+    // é‡å¯ESP8266
     ESP8266_Restart();
     HAL_Delay(500);
     
-    // ³õÊ¼»¯ESP8266
+    // åˆå§‹åŒ–ESP8266
     if (!ESP8266_Init(&huart1)) {
         ST7789_FillRectangle(10, 270, 220, 10, BLACK);
         ST7789_WriteString(10, 270, "ESP8266 not responding!", RED, BLACK, 1);
         
-        // ³¢ÊÔÖØÆôESP8266µÄÍ¨ĞÅ
-        // Ó²¼ş¿ÉÄÜĞèÒªÖØĞÂÉÏµç
+        // å°è¯•é‡å¯ESP8266çš„é€šä¿¡
+        // ç¡¬ä»¶å¯èƒ½éœ€è¦é‡æ–°ä¸Šç”µ
         wifiConnected = 0;
         return;
     }
     
-    // ÖØÖÃWiFiÁ¬½Ó×´Ì¬
+    // é‡ç½®WiFiè¿æ¥çŠ¶æ€
     wifiConnected = 0;
     
-    // ÏÔÊ¾Á¬½Ó×´Ì¬
+    // æ˜¾ç¤ºè¿æ¥çŠ¶æ€
     ST7789_FillRectangle(10, 270, 220, 10, BLACK);
     ST7789_WriteString(10, 270, "Checking WiFi connection...", YELLOW, BLACK, 1);
     
-    // ³¢ÊÔ¼ì²éÁ¬½Ó×´Ì¬
+    // å°è¯•æ£€æŸ¥è¿æ¥çŠ¶æ€
     for(retry = 0; retry < 3; retry++) {
         wifiConnected = ESP8266_CheckConnection();
         if(wifiConnected) {
@@ -222,9 +222,9 @@ void RestoreWiFiCommunication(void) {
         HAL_Delay(300);
     }
     
-    // Èç¹û¼ì²éÁ¬½ÓÊ§°Ü£¬³¢ÊÔÖØĞÂÁ¬½Ó
+    // å¦‚æœæ£€æŸ¥è¿æ¥å¤±è´¥ï¼Œå°è¯•é‡æ–°è¿æ¥
     if(!wifiConnected) {
-        // ÏÔÊ¾ÖØÁ¬×´Ì¬
+        // æ˜¾ç¤ºé‡è¿çŠ¶æ€
         ST7789_FillRectangle(10, 270, 220, 10, BLACK);
         ST7789_WriteString(10, 270, "Reconnecting WiFi...", YELLOW, BLACK, 1);
         
@@ -239,13 +239,13 @@ void RestoreWiFiCommunication(void) {
         }
     }
     
-    // Èç¹û³É¹¦Á¬½Ó£¬»ñÈ¡WiFiĞÅÏ¢
+    // å¦‚æœæˆåŠŸè¿æ¥ï¼Œè·å–WiFiä¿¡æ¯
     if(wifiConnected) {
-        // ÖØÖÃ¼ÆÊ±Æ÷ÒÔÁ¢¼´¸üĞÂWiFiĞÅÏ¢
+        // é‡ç½®è®¡æ—¶å™¨ä»¥ç«‹å³æ›´æ–°WiFiä¿¡æ¯
         lastWifiRssiUpdateTick = 0;
         lastWifiIpUpdateTick = 0;
         
-        // »ñÈ¡ĞÅºÅÇ¿¶ÈºÍIPµØÖ·
+        // è·å–ä¿¡å·å¼ºåº¦å’ŒIPåœ°å€
         rssiValue = 0;
         for(retry = 0; retry < 3; retry++) {
             rssiValue = ESP8266_GetRSSI();
@@ -261,20 +261,20 @@ void RestoreWiFiCommunication(void) {
             HAL_Delay(300);
         }
         
-        // ¸üĞÂWiFiĞÅÏ¢ÏÔÊ¾
+        // æ›´æ–°WiFiä¿¡æ¯æ˜¾ç¤º
         UpdateWiFiInfoDisplay();
         
-        // ³õÊ¼»¯MQTTÁ¬½Ó
+        // åˆå§‹åŒ–MQTTè¿æ¥
         ST7789_FillRectangle(10, 270, 220, 10, BLACK);
         ST7789_WriteString(10, 270, "Initializing MQTT...", YELLOW, BLACK, 1);
         InitializeMQTT();
         
-        // ²âÊÔ´¥¾õ·´À¡ÊÇ·ñÕı³£
+        // æµ‹è¯•è§¦è§‰åé¦ˆæ˜¯å¦æ­£å¸¸
         Beep(2);
         HAL_Delay(200);
         Vibrate(VIBRATOR_1, 200);
     } else {
-        // Á¬½ÓÊ§°Ü´¦Àí
+        // è¿æ¥å¤±è´¥å¤„ç†
         strcpy((char*)ipAddress, "WiFi Failed");
         rssiValue = 0;
         mqtt_connected = 0;
@@ -282,7 +282,7 @@ void RestoreWiFiCommunication(void) {
         ST7789_FillRectangle(10, 270, 220, 10, BLACK);
         ST7789_WriteString(10, 270, "WiFi reconnect failed", RED, BLACK, 1);
         
-        // ÏÔÊ¾¼ì²éÓ²¼şÌáÊ¾
+        // æ˜¾ç¤ºæ£€æŸ¥ç¡¬ä»¶æç¤º
         Beep(1);
         HAL_Delay(200);
         Beep(1);
@@ -290,44 +290,44 @@ void RestoreWiFiCommunication(void) {
 }
 
 /**
-  * @brief  ¸üĞÂÆÁÄ»ÉÏµÄWiFiĞÅÏ¢
+  * @brief  æ›´æ–°å±å¹•ä¸Šçš„WiFiä¿¡æ¯
   */
 void UpdateWiFiInfoDisplay(void) {
   if (!wifiConnected || currentSystemState != SYSTEM_STATE_PARAM_DISPLAY) return;
   
-  // ¸üĞÂĞÅºÅÇ¿¶È
+  // æ›´æ–°ä¿¡å·å¼ºåº¦
   ST7789_FillRectangle(10, 175, 220, 20, BLACK);
   char msgBuffer[128];
   sprintf(msgBuffer, "Signal: %d dBm", rssiValue);
   ST7789_WriteString(10, 175, msgBuffer, YELLOW, BLACK, 1);
   
-  // ¸üĞÂIPµØÖ·
+  // æ›´æ–°IPåœ°å€
   ST7789_FillRectangle(10, 195, 220, 20, BLACK);
   ST7789_WriteString(10, 195, "IP: ", CYAN, BLACK, 1);
   ST7789_WriteString(40, 195, (const char*)ipAddress, GREEN, BLACK, 1);
   
-  // Ìí¼ÓMQTT×´Ì¬ÏÔÊ¾
+  // æ·»åŠ MQTTçŠ¶æ€æ˜¾ç¤º
   ST7789_FillRectangle(10, 215, 220, 20, BLACK);
   sprintf(msgBuffer, "MQTT: %s", mqtt_connected ? "Connected" : "Disconnected");
   ST7789_WriteString(10, 215, msgBuffer, mqtt_connected ? GREEN : RED, BLACK, 1);
 }
 
 /**
-  * @brief  ³õÊ¼»¯WiFi
+  * @brief  åˆå§‹åŒ–WiFi
   */
 void InitializeWiFi(void) {
   ST7789_WriteString(10, 130, "Init WiFi...", CYAN, BLACK, 1);
   
-  // ³õÊ¼»¯ESP8266
+  // åˆå§‹åŒ–ESP8266
   uint8_t init_status = ESP8266_Init(&huart1);
   
   if (init_status) {
     ST7789_WriteString(200, 130, "OK", GREEN, BLACK, 1);
     
-    // ³¢ÊÔÁ¬½ÓWiFi
+    // å°è¯•è¿æ¥WiFi
     ST7789_WriteString(10, 150, "Connecting to WiFi...", CYAN, BLACK, 1);
     
-    // ³¢ÊÔÁ¬½ÓWiFi (Ôö¼ÓµÈ´ıºÍÖØÊÔ)
+    // å°è¯•è¿æ¥WiFi (å¢åŠ ç­‰å¾…å’Œé‡è¯•)
     HAL_Delay(1000);
     wifiConnected = ESP8266_ConnectToAP(WIFI_SSID, WIFI_PASSWORD);
     
@@ -336,7 +336,7 @@ void InitializeWiFi(void) {
       ST7789_WriteString(10, 170, "Network: ", CYAN, BLACK, 1);
       ST7789_WriteString(60, 170, WIFI_SSID, WHITE, BLACK, 1);
       
-      // »ñÈ¡IPµØÖ· - Ôö¼ÓÖØÊÔ´ÎÊı
+      // è·å–IPåœ°å€ - å¢åŠ é‡è¯•æ¬¡æ•°
       uint8_t ip_retry = 0;
       while (ip_retry < 3) {
         if (ESP8266_GetIP((char*)ipAddress, sizeof(ipAddress))) {
@@ -348,7 +348,7 @@ void InitializeWiFi(void) {
         ip_retry++;
       }
       
-      // »ñÈ¡ĞÅºÅÇ¿¶È - Ôö¼ÓÖØÊÔ´ÎÊı
+      // è·å–ä¿¡å·å¼ºåº¦ - å¢åŠ é‡è¯•æ¬¡æ•°
       uint8_t rssi_retry = 0;
       while (rssi_retry < 3) {
         rssiValue = ESP8266_GetRSSI();
@@ -362,7 +362,7 @@ void InitializeWiFi(void) {
         rssi_retry++;
       }
       
-      // ³õÊ¼»¯MQTTÁ¬½Ó
+      // åˆå§‹åŒ–MQTTè¿æ¥
       ST7789_WriteString(10, 230, "Init MQTT...", CYAN, BLACK, 1);
       InitializeMQTT();
       
@@ -370,10 +370,10 @@ void InitializeWiFi(void) {
     } else {
       ST7789_WriteString(200, 150, "FAIL", RED, BLACK, 1);
       
-      // ÖØÁ¬³¢ÊÔ
+      // é‡è¿å°è¯•
       ST7789_WriteString(10, 170, "Retrying...", YELLOW, BLACK, 1);
       
-      // Ôö¼ÓµÈ´ıÊ±¼äºÍÖØÊÔ´ÎÊı
+      // å¢åŠ ç­‰å¾…æ—¶é—´å’Œé‡è¯•æ¬¡æ•°
       for (uint8_t retry = 0; retry < 3; retry++) {
         ST7789_WriteString(100, 170, "attempt ", YELLOW, BLACK, 1);
         char retry_str[8];
@@ -387,11 +387,11 @@ void InitializeWiFi(void) {
           ST7789_WriteString(10, 190, "Connected!", GREEN, BLACK, 1);
           Beep(3);
           
-          // »ñÈ¡IPºÍĞÅºÅÇ¿¶È
+          // è·å–IPå’Œä¿¡å·å¼ºåº¦
           ESP8266_GetIP((char*)ipAddress, sizeof(ipAddress));
           rssiValue = ESP8266_GetRSSI();
           
-          // ³õÊ¼»¯MQTTÁ¬½Ó
+          // åˆå§‹åŒ–MQTTè¿æ¥
           ST7789_WriteString(10, 230, "Init MQTT...", CYAN, BLACK, 1);
           InitializeMQTT();
           
@@ -403,21 +403,21 @@ void InitializeWiFi(void) {
         ST7789_WriteString(10, 190, "Failed - Hardware issue?", RED, BLACK, 1);
         BeepContinuous(500);
         
-        // ÏÔÊ¾ESP8266Ó²¼ş¼ì²éÌáÊ¾
+        // æ˜¾ç¤ºESP8266ç¡¬ä»¶æ£€æŸ¥æç¤º
         ST7789_WriteString(10, 210, "Check ESP8266 power/wiring", RED, BLACK, 1);
       }
     }
   } else {
-    // ESP8266Í¨ĞÅÊ§°Ü
+    // ESP8266é€šä¿¡å¤±è´¥
     ST7789_WriteString(200, 130, "FAIL", RED, BLACK, 1);
     ST7789_WriteString(10, 150, "ESP8266 not responding", RED, BLACK, 1);
     ST7789_WriteString(10, 170, "Check power & wiring", RED, BLACK, 1);
     
-    // ³¢ÊÔÇ¿ÖÆÖØÆô
+    // å°è¯•å¼ºåˆ¶é‡å¯
     ST7789_WriteString(10, 190, "Trying restart...", YELLOW, BLACK, 1);
     ESP8266_Restart();
     
-    HAL_Delay(2000); // ¸øESP8266ÖØÆôµÄÊ±¼ä
+    HAL_Delay(2000); // ç»™ESP8266é‡å¯çš„æ—¶é—´
     
     if (ESP8266_Init(&huart1)) {
       ST7789_WriteString(10, 210, "Communication restored", GREEN, BLACK, 1);
@@ -430,11 +430,11 @@ void InitializeWiFi(void) {
 }
 
 /**
-  * @brief  ³õÊ¼»¯MQTTÁ¬½Ó
+  * @brief  åˆå§‹åŒ–MQTTè¿æ¥
   */
 void InitializeMQTT(void)
 {
-    // ¼ì²éESP8266ÊÇ·ñÒÑ³õÊ¼»¯²¢Á¬½Óµ½WiFi
+    // æ£€æŸ¥ESP8266æ˜¯å¦å·²åˆå§‹åŒ–å¹¶è¿æ¥åˆ°WiFi
     if (!wifiConnected) {
         DisplayDebugInfo("WiFi not connected, can't init MQTT");
         mqtt_connected = 0;
@@ -443,52 +443,52 @@ void InitializeMQTT(void)
     
     DisplayDebugInfo("Connecting to MQTT broker...");
     
-    // Ìí¼Ó´®¿Úµ÷ÊÔÊä³ö
+    // æ·»åŠ ä¸²å£è°ƒè¯•è¾“å‡º
     sprintf(debug_buffer, "MAIN: Initializing MQTT\r\n");
     HAL_UART_Transmit(&huart1, (uint8_t*)debug_buffer, strlen(debug_buffer), 300);
     HAL_Delay(20);
     
-    // ³õÊ¼»¯MQTT¼¯³É
+    // åˆå§‹åŒ–MQTTé›†æˆ
     if (Integration_Init()) {
         mqtt_connected = 1;
         DisplayDebugInfo("MQTT broker connected");
         ST7789_WriteString(200, 230, "OK", GREEN, BLACK, 1);
         
-        // Ìí¼Ó´®¿Úµ÷ÊÔÊä³ö
+        // æ·»åŠ ä¸²å£è°ƒè¯•è¾“å‡º
         sprintf(debug_buffer, "MAIN: MQTT connected successfully!\r\n");
         HAL_UART_Transmit(&huart1, (uint8_t*)debug_buffer, strlen(debug_buffer), 300);
         HAL_Delay(20);
         
-        // ·¢²¼ÏµÍ³×´Ì¬ĞÅÏ¢
+        // å‘å¸ƒç³»ç»ŸçŠ¶æ€ä¿¡æ¯
         Integration_PublishStatus("system_ready");
     } else {
         mqtt_connected = 0;
         DisplayDebugInfo("MQTT connection failed");
         ST7789_WriteString(200, 230, "FAIL", RED, BLACK, 1);
         
-        // Ìí¼Ó´®¿Úµ÷ÊÔÊä³ö
+        // æ·»åŠ ä¸²å£è°ƒè¯•è¾“å‡º
         sprintf(debug_buffer, "MAIN: MQTT connection failed\r\n");
         HAL_UART_Transmit(&huart1, (uint8_t*)debug_buffer, strlen(debug_buffer), 300);
         HAL_Delay(20);
         
-        // ÖØÊÔÁ¬½Ó
+        // é‡è¯•è¿æ¥
         HAL_Delay(2000);
         DisplayDebugInfo("Retrying MQTT...");
         if (Integration_Init()) {
             mqtt_connected = 1;
             ST7789_WriteString(200, 230, "OK", GREEN, BLACK, 1);
             
-            // Ìí¼Ó´®¿Úµ÷ÊÔÊä³ö
+            // æ·»åŠ ä¸²å£è°ƒè¯•è¾“å‡º
             sprintf(debug_buffer, "MAIN: MQTT connected on retry!\r\n");
             HAL_UART_Transmit(&huart1, (uint8_t*)debug_buffer, strlen(debug_buffer), 300);
             HAL_Delay(20);
             
-            // ·¢²¼ÏµÍ³×´Ì¬ĞÅÏ¢
+            // å‘å¸ƒç³»ç»ŸçŠ¶æ€ä¿¡æ¯
             Integration_PublishStatus("system_ready");
         } else {
             ST7789_WriteString(200, 230, "FAIL", RED, BLACK, 1);
             
-            // Ìí¼Ó´®¿Úµ÷ÊÔÊä³ö
+            // æ·»åŠ ä¸²å£è°ƒè¯•è¾“å‡º
             sprintf(debug_buffer, "MAIN: MQTT connection failed after retry\r\n");
             HAL_UART_Transmit(&huart1, (uint8_t*)debug_buffer, strlen(debug_buffer), 300);
             HAL_Delay(20);
@@ -497,18 +497,18 @@ void InitializeMQTT(void)
 }
 
 /**
-  * @brief  ¼ì²éMQTT×´Ì¬²¢´¦ÀíÃüÁî
+  * @brief  æ£€æŸ¥MQTTçŠ¶æ€å¹¶å¤„ç†å‘½ä»¤
   */
 void CheckMQTTStatus(void)
 {
     if (mqtt_connected) {
-        // ¼ì²éMQTTÁ¬½ÓÊÇ·ñÈÔÈ»»îÔ¾
+        // æ£€æŸ¥MQTTè¿æ¥æ˜¯å¦ä»ç„¶æ´»è·ƒ
         if (!MQTT_Check()) {
-            // Á¬½Ó¶Ï¿ª£¬³¢ÊÔÖØÁ¬
+            // è¿æ¥æ–­å¼€ï¼Œå°è¯•é‡è¿
             DisplayDebugInfo("MQTT disconnected. Reconnecting...");
             mqtt_connected = 0;
             
-            // ÖØĞÂ³õÊ¼»¯MQTT
+            // é‡æ–°åˆå§‹åŒ–MQTT
             if (Integration_Init()) {
                 mqtt_connected = 1;
                 DisplayDebugInfo("MQTT reconnected");
@@ -516,13 +516,13 @@ void CheckMQTTStatus(void)
                 DisplayDebugInfo("MQTT reconnect failed");
             }
         } else {
-            // ´¦Àí¿ÉÄÜµÄ´«ÈëÏûÏ¢
+            // å¤„ç†å¯èƒ½çš„ä¼ å…¥æ¶ˆæ¯
             Integration_ProcessCommands();
         }
     } else if (wifiConnected) {
-        // WiFiÒÑÁ¬½Óµ«MQTTÎ´Á¬½Ó£¬³¢ÊÔÖØÁ¬MQTT
+        // WiFiå·²è¿æ¥ä½†MQTTæœªè¿æ¥ï¼Œå°è¯•é‡è¿MQTT
         static uint32_t last_mqtt_reconnect = 0;
-        if (HAL_GetTick() - last_mqtt_reconnect > 30000) { // Ã¿30Ãë³¢ÊÔÒ»´Î
+        if (HAL_GetTick() - last_mqtt_reconnect > 30000) { // æ¯30ç§’å°è¯•ä¸€æ¬¡
             DisplayDebugInfo("Attempting MQTT connection...");
             if (Integration_Init()) {
                 mqtt_connected = 1;
@@ -534,39 +534,39 @@ void CheckMQTTStatus(void)
 }
 
 /**
-  * @brief  ´¦ÀíMQTTÃüÁî
+  * @brief  å¤„ç†MQTTå‘½ä»¤
   */
 void ProcessMQTTCommands(void)
 {
     if (command_received) {
         command_received = 0;
         
-        // ÕâÀï¿ÉÒÔÌí¼Ó´¦ÀíÌØ¶¨ÃüÁîµÄ´úÂë
-        // ÀıÈç£º½âÎöcommand_buffer²¢Ö´ĞĞÏàÓ¦µÄ²Ù×÷
+        // è¿™é‡Œå¯ä»¥æ·»åŠ å¤„ç†ç‰¹å®šå‘½ä»¤çš„ä»£ç 
+        // ä¾‹å¦‚ï¼šè§£æcommand_bufferå¹¶æ‰§è¡Œç›¸åº”çš„æ“ä½œ
         
-        // ÁÙÊ±Ê¾Àı£ºÏìÓ¦½ÓÊÕµ½µÄÃüÁî
+        // ä¸´æ—¶ç¤ºä¾‹ï¼šå“åº”æ¥æ”¶åˆ°çš„å‘½ä»¤
         char response[128];
         sprintf(response, "{\"status\":\"command_received\",\"command\":\"%s\"}", command_buffer);
         MQTT_Publish(MQTT_TOPIC_STATUS, response);
         
-        // Çå¿ÕÃüÁî»º³åÇø
+        // æ¸…ç©ºå‘½ä»¤ç¼“å†²åŒº
         memset(command_buffer, 0, sizeof(command_buffer));
     }
 }
 
 /**
-  * @brief  Í¨¹ıMQTT·¢ËÍÍ¼ÏñÎÄ¼ş
-  * @param  filename: Í¼ÏñÎÄ¼şÃû
-  * @retval 1: ³É¹¦, 0: Ê§°Ü
+  * @brief  é€šè¿‡MQTTå‘é€å›¾åƒæ–‡ä»¶
+  * @param  filename: å›¾åƒæ–‡ä»¶å
+  * @retval 1: æˆåŠŸ, 0: å¤±è´¥
   */
 uint8_t SendImageViaMQTT(const char* filename)
 {
-    // ¼ì²éMQTTÁ¬½Ó×´Ì¬
+    // æ£€æŸ¥MQTTè¿æ¥çŠ¶æ€
     if (!mqtt_connected) {
         DisplayDebugInfo("MQTT not connected. Reconnecting...");
         mqtt_connected = 0;
         
-        // ³¢ÊÔÖØĞÂÁ¬½ÓMQTT
+        // å°è¯•é‡æ–°è¿æ¥MQTT
         if (!Integration_Init()) {
             DisplayDebugInfo("MQTT reconnect failed");
             return 0;
@@ -575,29 +575,29 @@ uint8_t SendImageViaMQTT(const char* filename)
         mqtt_connected = 1;
     }
     
-    // ÏÔÊ¾½ø¶ÈĞÅÏ¢
+    // æ˜¾ç¤ºè¿›åº¦ä¿¡æ¯
     ST7789_FillScreen(BLACK);
     ST7789_WriteString(10, 10, "MQTT Image Transfer", WHITE, BLACK, 2);
     ST7789_WriteString(10, 40, "Sending image to server...", YELLOW, BLACK, 1);
     
-    // ·¢ËÍÍ¼Ïñ
+    // å‘é€å›¾åƒ
     DisplayDebugInfo("Sending image via MQTT...");
     
-    // ÓÃ½ø¶ÈÌõÏÔÊ¾½ø¶È
+    // ç”¨è¿›åº¦æ¡æ˜¾ç¤ºè¿›åº¦
     UpdateProgressBar(20, 80, 200, 20, 0, CYAN);
     
-    // ÉèÖÃ´«Êä±êÖ¾
+    // è®¾ç½®ä¼ è¾“æ ‡å¿—
     mqtt_image_transfer_in_progress = 1;
     
-    // Êµ¼Ê·¢ËÍÍ¼Ïñ
+    // å®é™…å‘é€å›¾åƒ
     uint8_t result = Integration_SendImage(filename);
     
     if (result) {
-        // ¸üĞÂ½ø¶ÈÌõ
+        // æ›´æ–°è¿›åº¦æ¡
         UpdateProgressBar(20, 80, 200, 20, 100, GREEN);
         ST7789_WriteString(10, 120, "Image sent successfully!", GREEN, BLACK, 1);
         
-        // µÈ´ı·ÖÎö½á¹û
+        // ç­‰å¾…åˆ†æç»“æœ
         ST7789_WriteString(10, 150, "Waiting for response...", YELLOW, BLACK, 1);
         
         char result_buffer[256] = {0};
@@ -610,25 +610,25 @@ uint8_t SendImageViaMQTT(const char* filename)
             ST7789_WriteString(10, 180, "No response from server", YELLOW, BLACK, 1);
         }
         
-        // ·¢ËÍ³É¹¦ÒôĞ§
+        // å‘é€æˆåŠŸéŸ³æ•ˆ
         Beep(3);
         Vibrate(VIBRATOR_1, 200);
     } else {
-        // ¸üĞÂ½ø¶ÈÌõÎªÊ§°Ü×´Ì¬
+        // æ›´æ–°è¿›åº¦æ¡ä¸ºå¤±è´¥çŠ¶æ€
         UpdateProgressBar(20, 80, 200, 20, 100, RED);
         ST7789_WriteString(10, 120, "Failed to send image!", RED, BLACK, 1);
         
-        // ´íÎóÒôĞ§
+        // é”™è¯¯éŸ³æ•ˆ
         Beep(1);
         HAL_Delay(200);
         Beep(1);
     }
     
-    // Çå³ı´«Êä±êÖ¾
+    // æ¸…é™¤ä¼ è¾“æ ‡å¿—
     mqtt_image_transfer_in_progress = 0;
     mqtt_image_transfer_requested = 0;
     
-    // µÈ´ı°´¼ü·µ»Ø
+    // ç­‰å¾…æŒ‰é”®è¿”å›
     ST7789_WriteString(10, 240, "Press any button to return", YELLOW, BLACK, 1);
     
     uint32_t start_wait = HAL_GetTick();
@@ -640,7 +640,7 @@ uint8_t SendImageViaMQTT(const char* filename)
         HAL_Delay(50);
     }
     
-    // ·µ»ØÏà»úÄ£Ê½²¢ÖØĞÂÏÔÊ¾Ïà»úÍ¼Ïñ
+    // è¿”å›ç›¸æœºæ¨¡å¼å¹¶é‡æ–°æ˜¾ç¤ºç›¸æœºå›¾åƒ
     if (currentSystemState == SYSTEM_STATE_CAMERA_MODE) {
         DisplayCameraImage(camera_buffer, PIC_WIDTH, PIC_HEIGHT);
         ST7789_WriteString(10, 10, "Camera Mode", WHITE, BLACK, 2);
@@ -651,7 +651,7 @@ uint8_t SendImageViaMQTT(const char* filename)
 }
 
 /**
-  * @brief  USART1³õÊ¼»¯
+  * @brief  USART1åˆå§‹åŒ–
   */
 static void MX_USART1_UART_Init(void)
 {
@@ -664,13 +664,13 @@ static void MX_USART1_UART_Init(void)
   huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
   huart1.Init.OverSampling = UART_OVERSAMPLING_16;
   
-  // ÆôÓÃUSART1Ê±ÖÓ
+  // å¯ç”¨USART1æ—¶é’Ÿ
   __HAL_RCC_USART1_CLK_ENABLE();
   
-  // ÆôÓÃGPIOAÊ±ÖÓ
+  // å¯ç”¨GPIOAæ—¶é’Ÿ
   __HAL_RCC_GPIOA_CLK_ENABLE();
   
-  // ÅäÖÃUSART1Òı½Å
+  // é…ç½®USART1å¼•è„š
   GPIO_InitTypeDef GPIO_InitStruct = {0};
   GPIO_InitStruct.Pin = GPIO_PIN_9|GPIO_PIN_10;  // PA9=TX, PA10=RX
   GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
@@ -679,7 +679,7 @@ static void MX_USART1_UART_Init(void)
   GPIO_InitStruct.Alternate = GPIO_AF7_USART1;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
   
-  // ³õÊ¼»¯UART
+  // åˆå§‹åŒ–UART
   if (HAL_UART_Init(&huart1) != HAL_OK)
   {
     Error_Handler();
@@ -687,14 +687,14 @@ static void MX_USART1_UART_Init(void)
 }
 
 /**
-  * @brief  ÏÔÊ¾ÏûÏ¢
+  * @brief  æ˜¾ç¤ºæ¶ˆæ¯
   */
 void Display_Message(uint16_t y, const char* msg, uint16_t color) {
     ST7789_WriteString(0, y, msg, color, BLACK, 1);
 }
 
 /**
-  * @brief  Ìî³ä¾ØĞÎÇøÓò
+  * @brief  å¡«å……çŸ©å½¢åŒºåŸŸ
   */
 void Fill_Rectangle(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint16_t color) {
     uint16_t i, j;
@@ -706,12 +706,12 @@ void Fill_Rectangle(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uin
 }
 
 /**
-  * @brief  ÏÔÊ¾ÉãÏñÍ·Í¼Ïñ
+  * @brief  æ˜¾ç¤ºæ‘„åƒå¤´å›¾åƒ
   */
 void DisplayCameraImage(uint16_t *camera_buf, uint16_t width, uint16_t height) {
     uint16_t x, y;
     
-    // ÖğÏñËØ»æÖÆÍ¼Ïñ
+    // é€åƒç´ ç»˜åˆ¶å›¾åƒ
     for(y = 0; y < height; y++) {
         for(x = 0; x < width; x++) {
             ST7789_DrawPixel(x, y, camera_buf[y * width + x]);
@@ -720,37 +720,37 @@ void DisplayCameraImage(uint16_t *camera_buf, uint16_t width, uint16_t height) {
 }
 
 /**
-  * @brief  ¸üĞÂ½ø¶ÈÌõ
+  * @brief  æ›´æ–°è¿›åº¦æ¡
   */
 void UpdateProgressBar(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint8_t progress, uint16_t color) {
-    // Çå³ıÔ­ÓĞ½ø¶ÈÌõ
+    // æ¸…é™¤åŸæœ‰è¿›åº¦æ¡
     Fill_Rectangle(x, y, width, height, BLACK);
     
-    // ¼ÆËãµ±Ç°½ø¶È
+    // è®¡ç®—å½“å‰è¿›åº¦
     uint16_t current_width = (width * progress) / 100;
     
-    // »æÖÆ½ø¶ÈÌõ
+    // ç»˜åˆ¶è¿›åº¦æ¡
     Fill_Rectangle(x, y, current_width, height, color);
     
-    // ÏÔÊ¾°Ù·Ö±È
+    // æ˜¾ç¤ºç™¾åˆ†æ¯”
     sprintf(debug_buffer, "%d%%", progress);
     ST7789_WriteString(x + width + 5, y, debug_buffer, WHITE, BLACK, 1);
 }
 
 /**
-  * @brief  ÏÔÊ¾¿ª»ú¶¯»­²¢Ö´ĞĞ³õÊ¼»¯
-  * @return ³õÊ¼»¯×´Ì¬ (0: ³É¹¦, ·Ç0: Ê§°Ü)
+  * @brief  æ˜¾ç¤ºå¼€æœºåŠ¨ç”»å¹¶æ‰§è¡Œåˆå§‹åŒ–
+  * @return åˆå§‹åŒ–çŠ¶æ€ (0: æˆåŠŸ, é0: å¤±è´¥)
   */
 uint8_t ShowBootAnimationAndInit(void) {
   uint8_t init_status = 0;
   char debug_buffer[64];
   
-  // ÏÔÊ¾Æô¶¯ÆÁÄ»
+  // æ˜¾ç¤ºå¯åŠ¨å±å¹•
   ST7789_FillScreen(BLACK);
   ST7789_WriteString(10, 80, "Camera & MQTT System", WHITE, BLACK, 2);
   ST7789_WriteString(60, 110, "System v1.0", CYAN, BLACK, 2);
   
-  // »æÖÆ½ø¶ÈÌõ¿ò¼Ü
+  // ç»˜åˆ¶è¿›åº¦æ¡æ¡†æ¶
   uint16_t barWidth = 200;
   uint16_t barHeight = 20;
   uint16_t barX = (240 - barWidth) / 2;
@@ -758,39 +758,39 @@ uint8_t ShowBootAnimationAndInit(void) {
   
   ST7789_DrawRectangle(barX, barY, barWidth, barHeight, WHITE);
   
-  // ×´Ì¬ÏÔÊ¾ÇøÓò
+  // çŠ¶æ€æ˜¾ç¤ºåŒºåŸŸ
   uint16_t statusY = barY + barHeight + 10;
   uint16_t detailY = statusY + 20;
   
-  // ³õÊ¼»¯±äÁ¿
+  // åˆå§‹åŒ–å˜é‡
   uint8_t progress = 0;
   
-  // 0-10%: ÏµÍ³»ù´¡³õÊ¼»¯
+  // 0-10%: ç³»ç»ŸåŸºç¡€åˆå§‹åŒ–
   ST7789_FillRectangle(barX, statusY, barWidth, 20, BLACK);
   ST7789_WriteString(barX, statusY, "System Initializing...", CYAN, BLACK, 1);
   
-  // Õâ²¿·ÖÒÑÔÚmainº¯Êı¿ªÊ¼Íê³É: HAL_Init, SystemClock_Config, delay_init
+  // è¿™éƒ¨åˆ†å·²åœ¨mainå‡½æ•°å¼€å§‹å®Œæˆ: HAL_Init, SystemClock_Config, delay_init
   for (progress = 0; progress <= 10; progress += 2) {
     ST7789_FillRectangle(barX + 2, barY + 2, (barWidth - 4) * progress / 100, barHeight - 4, CYAN);
     HAL_Delay(50);
   }
   
-  // 10-25%: ³õÊ¼»¯GPIOºÍ°´Å¥
+  // 10-25%: åˆå§‹åŒ–GPIOå’ŒæŒ‰é’®
   ST7789_FillRectangle(barX, statusY, barWidth, 20, BLACK);
   ST7789_WriteString(barX, statusY, "Initializing I/O...", CYAN, BLACK, 1);
   
   MX_GPIO_Init();
   Button_Init();
-  Haptic_Init(); // ³õÊ¼»¯´¥¾õ·´À¡
+  Haptic_Init(); // åˆå§‹åŒ–è§¦è§‰åé¦ˆ
   
-  Beep(1); // ¶ÌÌáÊ¾
+  Beep(1); // çŸ­æç¤º
   
   for (; progress <= 25; progress += 3) {
     ST7789_FillRectangle(barX + 2, barY + 2, (barWidth - 4) * progress / 100, barHeight - 4, CYAN);
     HAL_Delay(30);
   }
   
-  // 25-40%: ³õÊ¼»¯SD¿¨
+  // 25-40%: åˆå§‹åŒ–SDå¡
   ST7789_FillRectangle(barX, statusY, barWidth, 20, BLACK);
   ST7789_WriteString(barX, statusY, "Initializing SD Card...", CYAN, BLACK, 1);
   
@@ -800,22 +800,22 @@ uint8_t ShowBootAnimationAndInit(void) {
   ST7789_WriteString(barX, detailY, debug_buffer, sd_init_status == MSD_OK ? GREEN : RED, BLACK, 1);
   
   if (sd_init_status == MSD_OK) {
-    // ÉèÖÃÖĞ¶ÏÓÅÏÈ¼¶
+    // è®¾ç½®ä¸­æ–­ä¼˜å…ˆçº§
     Setup_SDIO_Interrupts();
     
-    // »ñÈ¡SD¿¨ĞÅÏ¢
+    // è·å–SDå¡ä¿¡æ¯
     HAL_SD_CardInfoTypeDef cardInfo;
     BSP_SD_GetCardInfo(&cardInfo);
     
-    // ¹ÒÔØÎÄ¼şÏµÍ³
+    // æŒ‚è½½æ–‡ä»¶ç³»ç»Ÿ
     fatfs_init_status = FATFS_Init();
     if (fatfs_init_status == 0) {
       ImageSave_Init();
       ImageSave_SetMode(SAVE_MODE_FATFS);
-      // È·±£´æÔÚ±ØÒªµÄÄ¿Â¼
+      // ç¡®ä¿å­˜åœ¨å¿…è¦çš„ç›®å½•
       EnsureSDCardDirectory();
     } else if (fatfs_init_status == 101) {
-      // ĞèÒª¸ñÊ½»¯
+      // éœ€è¦æ ¼å¼åŒ–
       ST7789_FillRectangle(barX, detailY, barWidth, 20, BLACK);
       ST7789_WriteString(barX, detailY, "Formatting SD Card...", YELLOW, BLACK, 1);
       fatfs_init_status = FATFS_Format();
@@ -824,12 +824,12 @@ uint8_t ShowBootAnimationAndInit(void) {
         ImageSave_SetMode(SAVE_MODE_FATFS);
         ST7789_FillRectangle(barX, detailY, barWidth, 20, BLACK);
         ST7789_WriteString(barX, detailY, "Format successful", GREEN, BLACK, 1);
-        // ´´½¨±ØÒªµÄÄ¿Â¼
+        // åˆ›å»ºå¿…è¦çš„ç›®å½•
         EnsureSDCardDirectory();
       }
     }
   } else {
-    init_status |= 0x01; // SD¿¨´íÎó±êÖ¾
+    init_status |= 0x01; // SDå¡é”™è¯¯æ ‡å¿—
   }
   
   for (; progress <= 40; progress += 3) {
@@ -837,7 +837,7 @@ uint8_t ShowBootAnimationAndInit(void) {
     HAL_Delay(30);
   }
   
-  // 40-60%: ³õÊ¼»¯UARTºÍWiFi
+  // 40-60%: åˆå§‹åŒ–UARTå’ŒWiFi
   ST7789_FillRectangle(barX, statusY, barWidth, 20, BLACK);
   ST7789_WriteString(barX, statusY, "Initializing WiFi...", CYAN, BLACK, 1);
   
@@ -848,7 +848,7 @@ uint8_t ShowBootAnimationAndInit(void) {
     HAL_Delay(20);
   }
   
-  // ³õÊ¼»¯ESP8266
+  // åˆå§‹åŒ–ESP8266
   uint8_t esp8266_status = ESP8266_Init(&huart1);
   if (esp8266_status) {
     ST7789_FillRectangle(barX, detailY, barWidth, 20, BLACK);
@@ -856,16 +856,16 @@ uint8_t ShowBootAnimationAndInit(void) {
   } else {
     ST7789_FillRectangle(barX, detailY, barWidth, 20, BLACK);
     ST7789_WriteString(barX, detailY, "ESP8266 Failed", RED, BLACK, 1);
-    init_status |= 0x02; // WiFi´íÎó±êÖ¾
+    init_status |= 0x02; // WiFié”™è¯¯æ ‡å¿—
   }
   
-  // Á¬½ÓWiFi
+  // è¿æ¥WiFi
   ST7789_FillRectangle(barX, detailY, barWidth, 20, BLACK);
   ST7789_WriteString(barX, detailY, "Connecting to network...", WHITE, BLACK, 1);
   
   wifiConnected = ESP8266_ConnectToAP(WIFI_SSID, WIFI_PASSWORD);
   if (!wifiConnected) {
-    // ÖØÊÔÒ»´Î
+    // é‡è¯•ä¸€æ¬¡
     wifiConnected = ESP8266_ConnectToAP(WIFI_SSID, WIFI_PASSWORD);
   }
   
@@ -876,7 +876,7 @@ uint8_t ShowBootAnimationAndInit(void) {
     ST7789_FillRectangle(barX, detailY, barWidth, 20, BLACK);
     ST7789_WriteString(barX, detailY, "WiFi Connected", GREEN, BLACK, 1);
     
-    // ³õÊ¼»¯MQTTÁ¬½Ó
+    // åˆå§‹åŒ–MQTTè¿æ¥
     ST7789_FillRectangle(barX, detailY + 20, barWidth, 20, BLACK);
     ST7789_WriteString(barX, detailY + 20, "Initializing MQTT...", YELLOW, BLACK, 1);
     InitializeMQTT();
@@ -891,7 +891,7 @@ uint8_t ShowBootAnimationAndInit(void) {
   } else {
     ST7789_FillRectangle(barX, detailY, barWidth, 20, BLACK);
     ST7789_WriteString(barX, detailY, "WiFi Failed", RED, BLACK, 1);
-    init_status |= 0x02; // WiFi´íÎó±êÖ¾
+    init_status |= 0x02; // WiFié”™è¯¯æ ‡å¿—
   }
   
   for (; progress <= 60; progress += 2) {
@@ -899,11 +899,11 @@ uint8_t ShowBootAnimationAndInit(void) {
     HAL_Delay(20);
   }
   
-  // 60-80%: ³õÊ¼»¯´«¸ĞÆ÷
+  // 60-80%: åˆå§‹åŒ–ä¼ æ„Ÿå™¨
   ST7789_FillRectangle(barX, statusY, barWidth, 20, BLACK);
   ST7789_WriteString(barX, statusY, "Initializing Sensors...", CYAN, BLACK, 1);
   
-  // ³õÊ¼»¯³¬Éù²¨´«¸ĞÆ÷
+  // åˆå§‹åŒ–è¶…å£°æ³¢ä¼ æ„Ÿå™¨
   HC_SR04_Init();
   frontDistance = HC_SR04_ReadDistance(HC_SR04_FRONT);
   sideDistance = HC_SR04_ReadDistance(HC_SR04_SIDE);
@@ -917,7 +917,7 @@ uint8_t ShowBootAnimationAndInit(void) {
     HAL_Delay(20);
   }
   
-  // 80-100%: ³õÊ¼»¯Ïà»ú
+  // 80-100%: åˆå§‹åŒ–ç›¸æœº
   ST7789_FillRectangle(barX, statusY, barWidth, 20, BLACK);
   ST7789_WriteString(barX, statusY, "Initializing Camera...", CYAN, BLACK, 1);
   
@@ -927,10 +927,10 @@ uint8_t ShowBootAnimationAndInit(void) {
   ST7789_WriteString(barX, detailY, debug_buffer, camera_init_result == 0 ? GREEN : RED, BLACK, 1);
   
   if (camera_init_result != 0) {
-    // ¼òµ¥µÄÏà»úÖØÊÔ
+    // ç®€å•çš„ç›¸æœºé‡è¯•
     camera_init_result = OV7670_Init();
     if (camera_init_result != 0) {
-      init_status |= 0x04; // Ïà»ú´íÎó±êÖ¾
+      init_status |= 0x04; // ç›¸æœºé”™è¯¯æ ‡å¿—
     }
   }
   
@@ -939,16 +939,16 @@ uint8_t ShowBootAnimationAndInit(void) {
     HAL_Delay(30);
   }
   
-  // ×Ü½á³õÊ¼»¯×´Ì¬
+  // æ€»ç»“åˆå§‹åŒ–çŠ¶æ€
   ST7789_FillRectangle(barX, statusY, barWidth, 20, BLACK);
   
   if (init_status == 0) {
     ST7789_WriteString(barX, statusY, "System Ready!", GREEN, BLACK, 1);
-    Beep(3); // ³É¹¦ÌáÊ¾Òô
+    Beep(3); // æˆåŠŸæç¤ºéŸ³
   } else {
     sprintf(debug_buffer, "Ready with warnings (%02X)", init_status);
     ST7789_WriteString(barX, statusY, debug_buffer, YELLOW, BLACK, 1);
-    Beep(2); // ¾¯¸æÌáÊ¾Òô
+    Beep(2); // è­¦å‘Šæç¤ºéŸ³
   }
   
   HAL_Delay(1000);
@@ -956,7 +956,7 @@ uint8_t ShowBootAnimationAndInit(void) {
 }
 
 /**
-  * @brief  ÏÔÊ¾²ÎÊıÆÁÄ»
+  * @brief  æ˜¾ç¤ºå‚æ•°å±å¹•
   */
 void DisplayParameterScreen(void) {
     if (currentSystemState != SYSTEM_STATE_PARAM_DISPLAY) return;
@@ -967,19 +967,19 @@ void DisplayParameterScreen(void) {
     ST7789_WriteString(90, 50, wifiConnected ? "Connected" : "Not Connected", 
                      wifiConnected ? GREEN : RED, BLACK, 2);
     
-    // ¹Ì¶¨½çÃæÔªËØ
+    // å›ºå®šç•Œé¢å…ƒç´ 
     ST7789_WriteString(10, 90, "Front:", WHITE, BLACK, 2);
     ST7789_WriteString(10, 120, "Side:", WHITE, BLACK, 2);
     
-    // SD¿¨×´Ì¬
+    // SDå¡çŠ¶æ€
     ST7789_WriteString(10, 150, "SD Card: Ready", GREEN, BLACK, 1);
     
-    // WiFiĞÅÏ¢ÇøÓò
+    // WiFiä¿¡æ¯åŒºåŸŸ
     if (wifiConnected) {
         ST7789_WriteString(10, 175, "Signal: Updating...", YELLOW, BLACK, 1);
         ST7789_WriteString(10, 195, "IP: Updating...", CYAN, BLACK, 1);
         
-        // Ìí¼ÓMQTT×´Ì¬ĞÅÏ¢
+        // æ·»åŠ MQTTçŠ¶æ€ä¿¡æ¯
         if (mqtt_connected) {
             ST7789_WriteString(10, 215, "MQTT: Connected", GREEN, BLACK, 1);
         } else {
@@ -987,23 +987,23 @@ void DisplayParameterScreen(void) {
         }
     }
     
-    // Ïà»ú×´Ì¬
+    // ç›¸æœºçŠ¶æ€
     ST7789_WriteString(10, 235, "Camera: Ready", GREEN, BLACK, 1);
     
-    // ¸üĞÂÊ¹ÓÃËµÃ÷£¬Ö¸Ê¾ĞèÒª³¤°´
+    // æ›´æ–°ä½¿ç”¨è¯´æ˜ï¼ŒæŒ‡ç¤ºéœ€è¦é•¿æŒ‰
     ST7789_WriteString(10, 255, "Long press mode btn (PA15) for camera", WHITE, BLACK, 1);
     
-    // µ÷ÊÔĞÅÏ¢ÇøÓò
+    // è°ƒè¯•ä¿¡æ¯åŒºåŸŸ
     ST7789_WriteString(10, 280, "System Ready", GREEN, BLACK, 1);
 }
 
 /**
-  * @brief  ¸üĞÂÆÁÄ»ÉÏµÄ¾àÀëÏÔÊ¾
+  * @brief  æ›´æ–°å±å¹•ä¸Šçš„è·ç¦»æ˜¾ç¤º
   */
 void UpdateDistanceDisplay(void) {
   if (currentSystemState != SYSTEM_STATE_PARAM_DISPLAY) return;
                             
-  // ¸üĞÂÇ°·½¾àÀë
+  // æ›´æ–°å‰æ–¹è·ç¦»
   ST7789_FillRectangle(100, 90, 130, 20, BLACK);
   if (frontDistance > 0 && frontDistance <= DISTANCE_MAX) {
     sprintf(debug_buffer, "%.1f cm", frontDistance);
@@ -1020,7 +1020,7 @@ void UpdateDistanceDisplay(void) {
     ST7789_WriteString(100, 90, "---", LIGHTGREY, BLACK, 2);
   }
   
-  // ¸üĞÂ²àÃæ¾àÀë
+  // æ›´æ–°ä¾§é¢è·ç¦»
   ST7789_FillRectangle(100, 120, 130, 20, BLACK);
   if (sideDistance > 0 && sideDistance <= DISTANCE_MAX) {
     sprintf(debug_buffer, "%.1f cm", sideDistance);
@@ -1039,35 +1039,35 @@ void UpdateDistanceDisplay(void) {
 }
 
 /**
-  * @brief  ÏÔÊ¾µ÷ÊÔĞÅÏ¢
+  * @brief  æ˜¾ç¤ºè°ƒè¯•ä¿¡æ¯
   */
 void DisplayDebugInfo(const char* info) {
   ST7789_FillRectangle(10, 270, 220, 10, BLACK);
   ST7789_WriteString(10, 270, info, YELLOW, BLACK, 1);
   
-  // ´®¿Úµ÷ÊÔÊä³ö
+  // ä¸²å£è°ƒè¯•è¾“å‡º
   sprintf(debug_buffer, "DEBUG: %s\r\n", info);
   HAL_UART_Transmit(&huart1, (uint8_t*)debug_buffer, strlen(debug_buffer), 300);
-  HAL_Delay(20); // Ôö¼Ó¶ÌÑÓ³ÙÈ·±£´«ÊäÍê³É
+  HAL_Delay(20); // å¢åŠ çŸ­å»¶è¿Ÿç¡®ä¿ä¼ è¾“å®Œæˆ
 }
 
 /**
-  * @brief  °´Å¥³õÊ¼»¯
+  * @brief  æŒ‰é’®åˆå§‹åŒ–
   */
 void Button_Init(void) {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
     
-    // ÆôÓÃGPIOAÊ±ÖÓ
+    // å¯ç”¨GPIOAæ—¶é’Ÿ
     __HAL_RCC_GPIOA_CLK_ENABLE();
     
-    // ÅäÖÃPA15ÎªÊäÈëÄ£Ê½(Ä£Ê½ÇĞ»»°´Å¥)
+    // é…ç½®PA15ä¸ºè¾“å…¥æ¨¡å¼(æ¨¡å¼åˆ‡æ¢æŒ‰é’®)
     GPIO_InitStruct.Pin = GPIO_PIN_15;
     GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
     
-    // ÅäÖÃPA0ÎªÊäÈëÄ£Ê½(ÅÄÕÕ°´Å¥)
+    // é…ç½®PA0ä¸ºè¾“å…¥æ¨¡å¼(æ‹ç…§æŒ‰é’®)
     GPIO_InitStruct.Pin = GPIO_PIN_0;
     GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
@@ -1076,20 +1076,20 @@ void Button_Init(void) {
 }
 
 /**
-  * @brief  ¼ì²âPA15°´Å¥ÊÇ·ñ°´ÏÂ£¬¿¼ÂÇ°´¼ü¶¶¶¯
+  * @brief  æ£€æµ‹PA15æŒ‰é’®æ˜¯å¦æŒ‰ä¸‹ï¼Œè€ƒè™‘æŒ‰é”®æŠ–åŠ¨
   */
 uint8_t Is_Button_Pressed(void) {
-    static uint8_t last_state = 1;    // ±£´æÉÏÒ»´Î°´¼ü×´Ì¬
-    static uint32_t debounce_time = 0; // ¶¶¶¯Ê±¼ä
+    static uint8_t last_state = 1;    // ä¿å­˜ä¸Šä¸€æ¬¡æŒ‰é”®çŠ¶æ€
+    static uint32_t debounce_time = 0; // æŠ–åŠ¨æ—¶é—´
     
     uint8_t current_state = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_15);
     
-    // °´¼ü×´Ì¬·¢Éú±ä»¯ÇÒÒÑ´ïµ½¶¶¶¯¼ä¸ô
+    // æŒ‰é”®çŠ¶æ€å‘ç”Ÿå˜åŒ–ä¸”å·²è¾¾åˆ°æŠ–åŠ¨é—´éš”
     if (current_state != last_state && HAL_GetTick() - debounce_time > 100) {
         debounce_time = HAL_GetTick();
         last_state = current_state;
         
-        // Èç¹û¼ì²âµ½°´¼ü±»°´ÏÂ£¬·µ»Ø1
+        // å¦‚æœæ£€æµ‹åˆ°æŒ‰é”®è¢«æŒ‰ä¸‹ï¼Œè¿”å›1
         if (current_state == GPIO_PIN_RESET) {
             return 1;
         }
@@ -1099,20 +1099,20 @@ uint8_t Is_Button_Pressed(void) {
 }
 
 /**
-  * @brief  ¼ì²âPA0°´Å¥ÊÇ·ñ°´ÏÂ£¬¿¼ÂÇ°´¼ü¶¶¶¯
+  * @brief  æ£€æµ‹PA0æŒ‰é’®æ˜¯å¦æŒ‰ä¸‹ï¼Œè€ƒè™‘æŒ‰é”®æŠ–åŠ¨
   */
 uint8_t Is_Camera_Button_Pressed(void) {
-    static uint8_t last_state = 1;    // ±£´æÉÏÒ»´Î°´¼ü×´Ì¬
-    static uint32_t debounce_time = 0; // ¶¶¶¯Ê±¼ä
+    static uint8_t last_state = 1;    // ä¿å­˜ä¸Šä¸€æ¬¡æŒ‰é”®çŠ¶æ€
+    static uint32_t debounce_time = 0; // æŠ–åŠ¨æ—¶é—´
     
     uint8_t current_state = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0);
     
-    // °´¼ü×´Ì¬·¢Éú±ä»¯ÇÒÒÑ´ïµ½¶¶¶¯¼ä¸ô
+    // æŒ‰é”®çŠ¶æ€å‘ç”Ÿå˜åŒ–ä¸”å·²è¾¾åˆ°æŠ–åŠ¨é—´éš”
     if (current_state != last_state && HAL_GetTick() - debounce_time > 100) {
         debounce_time = HAL_GetTick();
         last_state = current_state;
         
-        // Èç¹û¼ì²âµ½°´¼ü±»°´ÏÂ£¬·µ»Ø1
+        // å¦‚æœæ£€æµ‹åˆ°æŒ‰é”®è¢«æŒ‰ä¸‹ï¼Œè¿”å›1
         if (current_state == GPIO_PIN_RESET) {
             return 1;
         }
@@ -1122,181 +1122,181 @@ uint8_t Is_Camera_Button_Pressed(void) {
 }
 
 /**
-  * @brief  °´Å¥´¦Àíº¯ÊıµÄÍêÕûÊµÏÖ
+  * @brief  æŒ‰é’®å¤„ç†å‡½æ•°çš„å®Œæ•´å®ç°
   */
 void ProcessButton(void) {
-    static uint8_t lastModeButtonReading = GPIO_PIN_SET;    // ÉÏ´Î¶ÁÈ¡PA15µÄ×´Ì¬
-    static uint8_t modeButtonState = GPIO_PIN_SET;          // µ±Ç°Ïû¶¶ºóµÄPA15×´Ì¬
-    static uint32_t lastModeButtonDebounceTime = 0;         // PA15µÄÏû¶¶Ê±¼ä
+    static uint8_t lastModeButtonReading = GPIO_PIN_SET;    // ä¸Šæ¬¡è¯»å–PA15çš„çŠ¶æ€
+    static uint8_t modeButtonState = GPIO_PIN_SET;          // å½“å‰æ¶ˆæŠ–åçš„PA15çŠ¶æ€
+    static uint32_t lastModeButtonDebounceTime = 0;         // PA15çš„æ¶ˆæŠ–æ—¶é—´
     
-    static uint8_t lastCameraButtonReading = GPIO_PIN_SET;  // ÉÏ´Î¶ÁÈ¡PA0µÄ×´Ì¬
-    static uint8_t cameraButtonState = GPIO_PIN_SET;        // µ±Ç°Ïû¶¶ºóµÄPA0×´Ì¬
-    static uint32_t lastCameraButtonDebounceTime = 0;       // PA0µÄÏû¶¶Ê±¼ä
+    static uint8_t lastCameraButtonReading = GPIO_PIN_SET;  // ä¸Šæ¬¡è¯»å–PA0çš„çŠ¶æ€
+    static uint8_t cameraButtonState = GPIO_PIN_SET;        // å½“å‰æ¶ˆæŠ–åçš„PA0çŠ¶æ€
+    static uint32_t lastCameraButtonDebounceTime = 0;       // PA0çš„æ¶ˆæŠ–æ—¶é—´
     
-    // ¿ª»úºó·ÀÖ¹×Ô¶¯Ä£Ê½ÇĞ»»µÄ±£»¤ÆÚ
+    // å¼€æœºåé˜²æ­¢è‡ªåŠ¨æ¨¡å¼åˆ‡æ¢çš„ä¿æŠ¤æœŸ
     if (systemJustStarted) {
-        if (HAL_GetTick() > 3000) { // ¿ª»ú3Ãëºó²ÅÆôÓÃ°´Å¥
+        if (HAL_GetTick() > 3000) { // å¼€æœº3ç§’åæ‰å¯ç”¨æŒ‰é’®
             systemJustStarted = 0;
             DisplayDebugInfo("Buttons Enabled");
         } else {
-            return; // ºöÂÔÆô¶¯ÆÚ¼äµÄËùÓĞ°´Å¥ÊÂ¼ş
+            return; // å¿½ç•¥å¯åŠ¨æœŸé—´çš„æ‰€æœ‰æŒ‰é’®äº‹ä»¶
         }
     }
     
-    // ·ÀÖ¹ÒâÍâÄ£Ê½ÇĞ»»µÄÂß¼­
+    // é˜²æ­¢æ„å¤–æ¨¡å¼åˆ‡æ¢çš„é€»è¾‘
     if (currentSystemState == SYSTEM_STATE_CAMERA_MODE && autoModeChangeProtectionTimer == 0) {
-        // ¸Õ½øÈëÏà»úÄ£Ê½£¬Æô¶¯±£»¤¼ÆÊ±Æ÷
-        autoModeChangeProtectionTimer = HAL_GetTick() + 1000; // 1Ãë±£»¤ÆÚ
+        // åˆšè¿›å…¥ç›¸æœºæ¨¡å¼ï¼Œå¯åŠ¨ä¿æŠ¤è®¡æ—¶å™¨
+        autoModeChangeProtectionTimer = HAL_GetTick() + 1000; // 1ç§’ä¿æŠ¤æœŸ
     }
     
     if (autoModeChangeProtectionTimer > 0 && HAL_GetTick() < autoModeChangeProtectionTimer) {
-        // ÔÚ±£»¤ÆÚÄÚ£¬²»´¦ÀíÈÎºÎ°´Å¥ÊÂ¼ş
+        // åœ¨ä¿æŠ¤æœŸå†…ï¼Œä¸å¤„ç†ä»»ä½•æŒ‰é’®äº‹ä»¶
         return;
     }
     
-    // ---- ´¦ÀíÄ£Ê½ÇĞ»»°´Å¥ (PA15) ----
+    // ---- å¤„ç†æ¨¡å¼åˆ‡æ¢æŒ‰é’® (PA15) ----
     uint8_t modeReading = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_15);
     
-    // Ìí¼ÓÔ­Ê¼°´Å¥×´Ì¬µÄµ÷ÊÔÊä³ö
+    // æ·»åŠ åŸå§‹æŒ‰é’®çŠ¶æ€çš„è°ƒè¯•è¾“å‡º
     if (modeReading != lastModeButtonReading) {
         char dbgMsg[32];
         sprintf(dbgMsg, "Mode Button Raw: %s", modeReading == GPIO_PIN_RESET ? "DOWN" : "UP");
         DisplayDebugInfo(dbgMsg);
         lastModeButtonReading = modeReading;
-        lastModeButtonDebounceTime = HAL_GetTick(); // ÖØÖÃÏû¶¶¼ÆÊ±Æ÷
+        lastModeButtonDebounceTime = HAL_GetTick(); // é‡ç½®æ¶ˆæŠ–è®¡æ—¶å™¨
     }
     
-    // Ïû¶¶ÑÓ³Ù´¦Àí
+    // æ¶ˆæŠ–å»¶è¿Ÿå¤„ç†
     if ((HAL_GetTick() - lastModeButtonDebounceTime) > BUTTON_DEBOUNCE_TIME) {
-        // Èç¹û¶ÁÈ¡ÎÈ¶¨ÇÒÓëµ±Ç°×´Ì¬²»Í¬£¬Ôò¸üĞÂ
+        // å¦‚æœè¯»å–ç¨³å®šä¸”ä¸å½“å‰çŠ¶æ€ä¸åŒï¼Œåˆ™æ›´æ–°
         if (modeReading != modeButtonState) {
             modeButtonState = modeReading;
             
-            // °´Å¥°´ÏÂÊÂ¼ş (µÍµçÆ½)
+            // æŒ‰é’®æŒ‰ä¸‹äº‹ä»¶ (ä½ç”µå¹³)
             if (modeButtonState == GPIO_PIN_RESET && !buttonPressed) {
                 buttonPressed = 1;
                 buttonPressTick = HAL_GetTick();
                 buttonLongPressDetected = 0;
                 
-                // ÏÔÊ¾°´Å¥°´ÏÂ×´Ì¬
+                // æ˜¾ç¤ºæŒ‰é’®æŒ‰ä¸‹çŠ¶æ€
                 DisplayDebugInfo("Mode Button: DOWN");
             }
-            // °´Å¥ÊÍ·ÅÊÂ¼ş (¸ßµçÆ½)
+            // æŒ‰é’®é‡Šæ”¾äº‹ä»¶ (é«˜ç”µå¹³)
             else if (modeButtonState == GPIO_PIN_SET && buttonPressed) {
-                // ´¦Àí¶Ì°´(Èç¹ûÃ»ÓĞ¼ì²âµ½³¤°´)
+                // å¤„ç†çŸ­æŒ‰(å¦‚æœæ²¡æœ‰æ£€æµ‹åˆ°é•¿æŒ‰)
                 if (!buttonLongPressDetected) {
-                    // PA15¶Ì°´ÏÖÔÚ²»×öÈÎºÎ²Ù×÷
+                    // PA15çŸ­æŒ‰ç°åœ¨ä¸åšä»»ä½•æ“ä½œ
                     DisplayDebugInfo("Mode Button: SHORT PRESS (no action)");
                 }
                 
                 buttonPressed = 0;
                 
-                // ÏÔÊ¾°´Å¥Ì§Æğ×´Ì¬
+                // æ˜¾ç¤ºæŒ‰é’®æŠ¬èµ·çŠ¶æ€
                 DisplayDebugInfo("Mode Button: UP");
             }
         }
     }
     
-    // PA15³¤°´¼ì²â
+    // PA15é•¿æŒ‰æ£€æµ‹
     if (buttonPressed && !buttonLongPressDetected && (HAL_GetTick() - buttonPressTick > BUTTON_LONGPRESS_TIME)) {
         buttonLongPressDetected = 1;
         
-        // ÏÔÊ¾³¤°´¼ì²â
+        // æ˜¾ç¤ºé•¿æŒ‰æ£€æµ‹
         DisplayDebugInfo("Mode Button: LONG PRESS");
         
-        // ²ÎÊıÏÔÊ¾Ä£Ê½ÏÂ³¤°´ÇĞ»»µ½Ïà»úÄ£Ê½
+        // å‚æ•°æ˜¾ç¤ºæ¨¡å¼ä¸‹é•¿æŒ‰åˆ‡æ¢åˆ°ç›¸æœºæ¨¡å¼
         if (currentSystemState == SYSTEM_STATE_PARAM_DISPLAY) {
-            // ÏÔÊ¾ÇĞ»»ĞÅÏ¢
+            // æ˜¾ç¤ºåˆ‡æ¢ä¿¡æ¯
             DisplayDebugInfo("Long Press - Entering Camera");
             
-            // ÑÓ³ÙÒ»µãÊ±¼äÔÙÇĞ»»ÒÔ±ÜÃâÎó´¥
+            // å»¶è¿Ÿä¸€ç‚¹æ—¶é—´å†åˆ‡æ¢ä»¥é¿å…è¯¯è§¦
             HAL_Delay(200);
             
             currentSystemState = SYSTEM_STATE_CAMERA_MODE;
             
-            // Æô¶¯±£»¤¼ÆÊ±Æ÷
+            // å¯åŠ¨ä¿æŠ¤è®¡æ—¶å™¨
             autoModeChangeProtectionTimer = HAL_GetTick() + 1000;
             
-            // ÇåÆÁ£¬×¼±¸½øÈëÏà»úÄ£Ê½
+            // æ¸…å±ï¼Œå‡†å¤‡è¿›å…¥ç›¸æœºæ¨¡å¼
             ST7789_FillScreen(BLACK);
             ST7789_WriteString(10, 10, "Camera Mode", WHITE, BLACK, 2);
             ST7789_WriteString(10, 40, "Mode button: hold to exit", YELLOW, BLACK, 1);
             ST7789_WriteString(10, 60, "Camera button: press to capture", YELLOW, BLACK, 1);
         }
-        // Ïà»úÄ£Ê½ÏÂ³¤°´ÇĞ»»µ½²ÎÊıÏÔÊ¾Ä£Ê½
+        // ç›¸æœºæ¨¡å¼ä¸‹é•¿æŒ‰åˆ‡æ¢åˆ°å‚æ•°æ˜¾ç¤ºæ¨¡å¼
         else if (currentSystemState == SYSTEM_STATE_CAMERA_MODE) {
-            // ÏÔÊ¾ÇĞ»»ĞÅÏ¢
+            // æ˜¾ç¤ºåˆ‡æ¢ä¿¡æ¯
             DisplayDebugInfo("Long Press - Exiting Camera");
             
-            // ÑÓ³ÙÒ»µãÊ±¼äÔÙÇĞ»»
+            // å»¶è¿Ÿä¸€ç‚¹æ—¶é—´å†åˆ‡æ¢
             HAL_Delay(200);
             
-            // ÏÈ¸üĞÂ×´Ì¬
+            // å…ˆæ›´æ–°çŠ¶æ€
             currentSystemState = SYSTEM_STATE_PARAM_DISPLAY;
             
-            // È¡ÏûËùÓĞÅÄÕÕÇëÇó
+            // å–æ¶ˆæ‰€æœ‰æ‹ç…§è¯·æ±‚
             capture_requested = 0;
             
-            // µ÷ÓÃÔöÇ¿ĞÍWiFiÍ¨ĞÅ»Ö¸´º¯Êı
+            // è°ƒç”¨å¢å¼ºå‹WiFié€šä¿¡æ¢å¤å‡½æ•°
             RestoreWiFiCommunication();
             
-            // ÏÔÊ¾²ÎÊıÆÁÄ»
+            // æ˜¾ç¤ºå‚æ•°å±å¹•
             DisplayParameterScreen();
             
-            // ÖØÖÃ¼ÆÊ±Æ÷ÒÔÇ¿ÖÆÁ¢¼´¸üĞÂ
+            // é‡ç½®è®¡æ—¶å™¨ä»¥å¼ºåˆ¶ç«‹å³æ›´æ–°
             lastDistanceUpdateTick = 0;
             lastWifiRssiUpdateTick = 0;
             
-            // ¶ÁÈ¡Ò»´Î¾àÀëÒÔÈ·±£ÏÔÊ¾ÕıÈ·
+            // è¯»å–ä¸€æ¬¡è·ç¦»ä»¥ç¡®ä¿æ˜¾ç¤ºæ­£ç¡®
             frontDistance = HC_SR04_ReadDistance(HC_SR04_FRONT);
             sideDistance = HC_SR04_ReadDistance(HC_SR04_SIDE);
             
-            // ¸üĞÂÏÔÊ¾
+            // æ›´æ–°æ˜¾ç¤º
             UpdateDistanceDisplay();
             
-            // È·±£ÏµÍ³ÎÈ¶¨
+            // ç¡®ä¿ç³»ç»Ÿç¨³å®š
             HAL_Delay(100);
         }
     }
     
-    // ---- ´¦ÀíÅÄÕÕ°´Å¥ (PA0) ----
-    // Ö»ÔÚÏà»úÄ£Ê½ÏÂ´¦ÀíÅÄÕÕ°´Å¥
+    // ---- å¤„ç†æ‹ç…§æŒ‰é’® (PA0) ----
+    // åªåœ¨ç›¸æœºæ¨¡å¼ä¸‹å¤„ç†æ‹ç…§æŒ‰é’®
     if (currentSystemState == SYSTEM_STATE_CAMERA_MODE) {
         uint8_t cameraReading = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0);
         
-        // Ìí¼ÓÅÄÕÕ°´Å¥×´Ì¬µÄµ÷ÊÔÊä³ö
+        // æ·»åŠ æ‹ç…§æŒ‰é’®çŠ¶æ€çš„è°ƒè¯•è¾“å‡º
         if (cameraReading != lastCameraButtonReading) {
             char dbgMsg[32];
             sprintf(dbgMsg, "Camera Button Raw: %s", cameraReading == GPIO_PIN_RESET ? "DOWN" : "UP");
             DisplayDebugInfo(dbgMsg);
             lastCameraButtonReading = cameraReading;
-            lastCameraButtonDebounceTime = HAL_GetTick(); // ÖØÖÃÏû¶¶¼ÆÊ±Æ÷
+            lastCameraButtonDebounceTime = HAL_GetTick(); // é‡ç½®æ¶ˆæŠ–è®¡æ—¶å™¨
         }
         
-        // Ïû¶¶ÑÓ³Ù´¦Àí
+        // æ¶ˆæŠ–å»¶è¿Ÿå¤„ç†
         if ((HAL_GetTick() - lastCameraButtonDebounceTime) > BUTTON_DEBOUNCE_TIME) {
-            // Èç¹û¶ÁÈ¡ÎÈ¶¨ÇÒÓëµ±Ç°×´Ì¬²»Í¬£¬Ôò¸üĞÂ
+            // å¦‚æœè¯»å–ç¨³å®šä¸”ä¸å½“å‰çŠ¶æ€ä¸åŒï¼Œåˆ™æ›´æ–°
             if (cameraReading != cameraButtonState) {
                 cameraButtonState = cameraReading;
                 
-                // °´Å¥°´ÏÂÊÂ¼ş (µÍµçÆ½)
+                // æŒ‰é’®æŒ‰ä¸‹äº‹ä»¶ (ä½ç”µå¹³)
                 if (cameraButtonState == GPIO_PIN_RESET && !cameraButtonPressed) {
                     cameraButtonPressed = 1;
                     cameraButtonPressTick = HAL_GetTick();
                     
-                    // ÏÔÊ¾°´Å¥°´ÏÂ×´Ì¬
+                    // æ˜¾ç¤ºæŒ‰é’®æŒ‰ä¸‹çŠ¶æ€
                     DisplayDebugInfo("Camera Button: DOWN");
                 }
-                // °´Å¥ÊÍ·ÅÊÂ¼ş (¸ßµçÆ½)
+                // æŒ‰é’®é‡Šæ”¾äº‹ä»¶ (é«˜ç”µå¹³)
                 else if (cameraButtonState == GPIO_PIN_SET && cameraButtonPressed) {
-                    // ÅÄÕÕ°´Å¥ÊÍ·ÅÊ±ÅÄÕÕ
+                    // æ‹ç…§æŒ‰é’®é‡Šæ”¾æ—¶æ‹ç…§
                     capture_requested = 1;
                     DisplayDebugInfo("Camera Button pressed - Photo requested");
-                    Buzzer_Beep_Short(); // °´Å¥°´ÏÂÌáÊ¾Òô
+                    Buzzer_Beep_Short(); // æŒ‰é’®æŒ‰ä¸‹æç¤ºéŸ³
                     
                     cameraButtonPressed = 0;
                     
-                    // ÏÔÊ¾°´Å¥Ì§Æğ×´Ì¬
+                    // æ˜¾ç¤ºæŒ‰é’®æŠ¬èµ·çŠ¶æ€
                     DisplayDebugInfo("Camera Button: UP");
                 }
             }
@@ -1305,36 +1305,36 @@ void ProcessButton(void) {
 }
 
 /**
-  * @brief  ¸üĞÂ²ÎÊıÏÔÊ¾Ä£Ê½
+  * @brief  æ›´æ–°å‚æ•°æ˜¾ç¤ºæ¨¡å¼
   */
 void ParameterDisplayModeUpdate(void) {
   if (currentSystemState != SYSTEM_STATE_PARAM_DISPLAY) return;
 
-  // ¶ÁÈ¡¾àÀë´«¸ĞÆ÷
+  // è¯»å–è·ç¦»ä¼ æ„Ÿå™¨
   frontDistance = HC_SR04_ReadDistance(HC_SR04_FRONT);
   sideDistance = HC_SR04_ReadDistance(HC_SR04_SIDE);
   
-  // Ã¿200ms¸üĞÂ¾àÀëÏÔÊ¾
+  // æ¯200msæ›´æ–°è·ç¦»æ˜¾ç¤º
   if (HAL_GetTick() - lastDistanceUpdateTick >= 200 || lastDistanceUpdateTick == 0) {
     lastDistanceUpdateTick = HAL_GetTick();
     UpdateDistanceDisplay();
   }
   
-  // Ã¿5Ãë¸üĞÂWiFiĞÅÏ¢£¨ĞÅºÅÇ¿¶È£©
+  // æ¯5ç§’æ›´æ–°WiFiä¿¡æ¯ï¼ˆä¿¡å·å¼ºåº¦ï¼‰
   if (wifiConnected && (HAL_GetTick() - lastWifiRssiUpdateTick >= 5000 || lastWifiRssiUpdateTick == 0)) {
     lastWifiRssiUpdateTick = HAL_GetTick();
     rssiValue = ESP8266_GetRSSI();
     UpdateWiFiInfoDisplay();
   }
   
-  // Ã¿15Ãë¸üĞÂIPµØÖ·
+  // æ¯15ç§’æ›´æ–°IPåœ°å€
   if (wifiConnected && (HAL_GetTick() - lastWifiIpUpdateTick >= 15000 || lastWifiIpUpdateTick == 0)) {
     lastWifiIpUpdateTick = HAL_GetTick();
     ESP8266_GetIP((char*)ipAddress, sizeof(ipAddress));
     UpdateWiFiInfoDisplay();
   }
   
-  // ¼ì²éMQTT×´Ì¬²¢´¦ÀíÃüÁî
+  // æ£€æŸ¥MQTTçŠ¶æ€å¹¶å¤„ç†å‘½ä»¤
   if (wifiConnected) {
     CheckMQTTStatus();
     ProcessMQTTCommands();
@@ -1342,251 +1342,251 @@ void ParameterDisplayModeUpdate(void) {
 }
 
 /**
-  * @brief  ¸üĞÂÏà»úÄ£Ê½
+  * @brief  æ›´æ–°ç›¸æœºæ¨¡å¼
   */
 void CameraModeUpdate(void) {
     if (currentSystemState != SYSTEM_STATE_CAMERA_MODE) return;
   
-    // ÅĞ¶ÏÊÇ·ñ´¦ÓÚÍ¼Ïñ´«Êä×´Ì¬
+    // åˆ¤æ–­æ˜¯å¦å¤„äºå›¾åƒä¼ è¾“çŠ¶æ€
     static uint8_t showing_mqtt_transfer = 0;
     static uint32_t mqtt_transfer_start_time = 0;
     
-    // Èç¹ûÓĞĞÂÖ¡Êı¾İÇÒ²»ÔÚ´«Êä¹ı³ÌÖĞ
+    // å¦‚æœæœ‰æ–°å¸§æ•°æ®ä¸”ä¸åœ¨ä¼ è¾“è¿‡ç¨‹ä¸­
     if (ov_rev_ok && !showing_mqtt_transfer) {
-        // ÏÔÊ¾Ö¡´¦ÀíĞÅÏ¢
+        // æ˜¾ç¤ºå¸§å¤„ç†ä¿¡æ¯
         Display_Message(DEBUG_START_Y + 60, "Processing new frame...", YELLOW);
         
-        // ÏÔÊ¾Í¼Ïñ
+        // æ˜¾ç¤ºå›¾åƒ
         DisplayCameraImage(camera_buffer, PIC_WIDTH, PIC_HEIGHT);
         frame_counter++;
         
-        // ÏÔÊ¾ÅÄÕÕÌáÊ¾
+        // æ˜¾ç¤ºæ‹ç…§æç¤º
         ST7789_WriteString(10, 10, "Camera Mode", WHITE, BLACK, 2);
         ST7789_WriteString(10, PIC_HEIGHT + 10, "Press PA0 to capture & send", YELLOW, BLACK, 1);
         
-        // Èç¹ûĞèÒªÅÄÕÕÇÒSD¿¨³õÊ¼»¯³É¹¦
+        // å¦‚æœéœ€è¦æ‹ç…§ä¸”SDå¡åˆå§‹åŒ–æˆåŠŸ
         if (capture_requested && sd_init_status == MSD_OK && fatfs_init_status == 0) {
-            // ¼ÇÂ¼¿ªÊ¼Ê±¼ä
+            // è®°å½•å¼€å§‹æ—¶é—´
             photo_save_start_time = HAL_GetTick();
             
-            // ÏÔÊ¾±£´æ×´Ì¬
+            // æ˜¾ç¤ºä¿å­˜çŠ¶æ€
             Display_Message(DEBUG_START_Y + 80, "Saving image to SD card...", YELLOW);
-            Fill_Rectangle(20, 60, 200, 80, BLUE); // À¶É«±³¾°
+            Fill_Rectangle(20, 60, 200, 80, BLUE); // è“è‰²èƒŒæ™¯
             ST7789_WriteString(40, 70, "SAVING PHOTO...", WHITE, BLUE, 1);
             
-            // Ê¹ÓÃImageSaveÏµÍ³±£´æÍ¼Ïñ
+            // ä½¿ç”¨ImageSaveç³»ç»Ÿä¿å­˜å›¾åƒ
             if (ImageSave_IsIdle()) {
-                // Æô¶¯Í¼Ïñ±£´æ
+                // å¯åŠ¨å›¾åƒä¿å­˜
                 uint8_t start_result = ImageSave_StartCapture(camera_buffer, PIC_WIDTH, PIC_HEIGHT);
                 sprintf(debug_buffer, "Start save: %d", start_result);
                 Display_Message(DEBUG_START_Y + 90, debug_buffer, start_result ? GREEN : RED);
                 
-                // ´¦Àí±£´æ¹ı³Ì
+                // å¤„ç†ä¿å­˜è¿‡ç¨‹
                 uint32_t process_start = HAL_GetTick();
                 uint32_t process_count = 0;
                 uint32_t last_progress = 0;
-                uint8_t progress_bar_width = 160; // ½ø¶ÈÌõ¿í¶È
+                uint8_t progress_bar_width = 160; // è¿›åº¦æ¡å®½åº¦
                 
-                // ÔÚĞ´Èë¹ı³ÌÖĞÏÔÊ¾½ø¶ÈÌõ
+                // åœ¨å†™å…¥è¿‡ç¨‹ä¸­æ˜¾ç¤ºè¿›åº¦æ¡
                 ST7789_WriteString(40, 90, "Progress: ", WHITE, BLUE, 1);
-                Fill_Rectangle(110, 90, progress_bar_width, 10, BLACK); // ½ø¶ÈÌõ±³¾°
+                Fill_Rectangle(110, 90, progress_bar_width, 10, BLACK); // è¿›åº¦æ¡èƒŒæ™¯
                 
-                // ÏÔÊ¾Ê¹ÓÃµÄ±£´æÄ£Ê½
+                // æ˜¾ç¤ºä½¿ç”¨çš„ä¿å­˜æ¨¡å¼
                 sprintf(debug_buffer, "Mode: %s", (save_mode == SAVE_MODE_FATFS) ? "FatFs" : "Direct (DMA)");
                 ST7789_WriteString(40, 110, debug_buffer, WHITE, BLUE, 1);
                 
-                // ±£´æ×´Ì¬´¦ÀíÑ­»·
+                // ä¿å­˜çŠ¶æ€å¤„ç†å¾ªç¯
                 uint32_t last_debug_time = HAL_GetTick();
                 
                 while (!ImageSave_IsIdle() && HAL_GetTick() - process_start < 30000) {
-                    // ´¦ÀíÒ»²½±£´æ²Ù×÷
+                    // å¤„ç†ä¸€æ­¥ä¿å­˜æ“ä½œ
                     ImageSave_Process();
                     process_count++;
                     
-                    // »ñÈ¡µ±Ç°×´Ì¬
+                    // è·å–å½“å‰çŠ¶æ€
                     SaveState_t current_state = ImageSave_GetState();
                     uint8_t error_code = ImageSave_GetError();
                     
-                    // »ñÈ¡²¢ÏÔÊ¾µ±Ç°½ø¶È
+                    // è·å–å¹¶æ˜¾ç¤ºå½“å‰è¿›åº¦
                     uint8_t current_progress = ImageSave_GetProgress();
                     
-                    // ¸üĞÂ½ø¶ÈÌõ
+                    // æ›´æ–°è¿›åº¦æ¡
                     if (current_progress != last_progress) {
                         last_progress = current_progress;
-                        // »æÖÆ½ø¶ÈÌõ
+                        // ç»˜åˆ¶è¿›åº¦æ¡
                         uint16_t bar_width = (progress_bar_width * current_progress) / 100;
-                        Fill_Rectangle(110, 90, bar_width, 10, GREEN); // ÒÑÍê³É²¿·Ö
+                        Fill_Rectangle(110, 90, bar_width, 10, GREEN); // å·²å®Œæˆéƒ¨åˆ†
                         
-                        // ÏÔÊ¾½ø¶È°Ù·Ö±È
+                        // æ˜¾ç¤ºè¿›åº¦ç™¾åˆ†æ¯”
                         sprintf(debug_buffer, "%d%%", current_progress);
                         ST7789_WriteString(110 + progress_bar_width + 5, 90, debug_buffer, WHITE, BLUE, 1);
                     }
                     
-                    // Ã¿50ms¸üĞÂÒ»´Îµ÷ÊÔĞÅÏ¢
+                    // æ¯50msæ›´æ–°ä¸€æ¬¡è°ƒè¯•ä¿¡æ¯
                     if (HAL_GetTick() - last_debug_time > 50) {
-                        // ÏÔÊ¾µ÷ÊÔĞÅÏ¢
+                        // æ˜¾ç¤ºè°ƒè¯•ä¿¡æ¯
                         const char* debug_str = ImageSave_GetDebugInfo();
                         sprintf(debug_buffer, "Debug: %s", debug_str);
                         Display_Message(DEBUG_START_Y + 100, debug_buffer, CYAN);
                         
-                        // ÏÔÊ¾×´Ì¬ºÍ´íÎóÂë
+                        // æ˜¾ç¤ºçŠ¶æ€å’Œé”™è¯¯ç 
                         sprintf(debug_buffer, "State: %d Err: %d", current_state, error_code);
                         Display_Message(DEBUG_START_Y + 130, debug_buffer, YELLOW);
                         
-                        // ÏÔÊ¾±£´æ×´Ì¬
+                        // æ˜¾ç¤ºä¿å­˜çŠ¶æ€
                         Display_Save_Status();
                         
-                        // ¸üĞÂÊ±¼ä´Á
+                        // æ›´æ–°æ—¶é—´æˆ³
                         last_debug_time = HAL_GetTick();
                     }
                     
-                    // ´¦Àí°´¼ü£¬ÔÊĞíÓÃ»§È¡Ïû
+                    // å¤„ç†æŒ‰é”®ï¼Œå…è®¸ç”¨æˆ·å–æ¶ˆ
                     ProcessButton();
                     
-                    HAL_Delay(5); // Ôö¼ÓÑÓÊ±£¬¼õÇáCPU¸ºµ£
+                    HAL_Delay(5); // å¢åŠ å»¶æ—¶ï¼Œå‡è½»CPUè´Ÿæ‹…
                 }
                 
-                // ¼ì²é±£´æ½á¹û
+                // æ£€æŸ¥ä¿å­˜ç»“æœ
                 if (ImageSave_GetError() == SAVE_ERROR_NONE && ImageSave_IsIdle()) {
-                    // ±£´æ³É¹¦
+                    // ä¿å­˜æˆåŠŸ
                     uint32_t save_time = HAL_GetTick() - photo_save_start_time;
                     
-                    // »ñÈ¡µ±Ç°ÎÄ¼şË÷Òı
+                    // è·å–å½“å‰æ–‡ä»¶ç´¢å¼•
                     current_file_index = ImageSave_GetFileIndex();
                     
-                    // ÏÔÊ¾³É¹¦ÏûÏ¢
-                    Fill_Rectangle(20, 60, 200, 80, GREEN); // ÂÌÉ«±³¾°
+                    // æ˜¾ç¤ºæˆåŠŸæ¶ˆæ¯
+                    Fill_Rectangle(20, 60, 200, 80, GREEN); // ç»¿è‰²èƒŒæ™¯
                     ST7789_WriteString(30, 70, "PHOTO SAVED!", BLACK, GREEN, 2);
                     sprintf(debug_buffer, "Image #%u", (unsigned int)current_file_index);
                     ST7789_WriteString(45, 100, debug_buffer, BLACK, GREEN, 1);
                     sprintf(debug_buffer, "Time: %ums", (unsigned int)save_time);
                     ST7789_WriteString(45, 120, debug_buffer, BLACK, GREEN, 1);
                     
-                    // ÖØÃüÃûÎªIMAGE.JPGÓÃÓÚMQTT´«Êä
+                    // é‡å‘½åä¸ºIMAGE.JPGç”¨äºMQTTä¼ è¾“
                     char source_file[32];
                     sprintf(source_file, "0:/IMG_%04u.BMP", (unsigned int)current_file_index);
                     f_rename(source_file, IMAGE_FILENAME);
                     
-                    // ³É¹¦ÌáÊ¾Òô
+                    // æˆåŠŸæç¤ºéŸ³
                     Buzzer_Beep_Short();
                     
-                    // ÉèÖÃ³É¹¦±êÖ¾£¬µ«²»Á¢¼´ÏÔÊ¾
+                    // è®¾ç½®æˆåŠŸæ ‡å¿—ï¼Œä½†ä¸ç«‹å³æ˜¾ç¤º
                     photo_saved_success = 1;
                     success_display_time = HAL_GetTick();
                     
-                    // ¼ì²éMQTTÁ¬½Ó×´Ì¬²¢×¼±¸·¢ËÍÍ¼Ïñ
+                    // æ£€æŸ¥MQTTè¿æ¥çŠ¶æ€å¹¶å‡†å¤‡å‘é€å›¾åƒ
                     if (mqtt_connected) {
-                        // ÏÔÊ¾ÕıÔÚ×¼±¸MQTTÍ¼Ïñ´«Êä
+                        // æ˜¾ç¤ºæ­£åœ¨å‡†å¤‡MQTTå›¾åƒä¼ è¾“
                         Display_Message(DEBUG_START_Y + 140, "Preparing MQTT image transfer...", YELLOW);
                         
-                        // Ìí¼Ó´®¿Úµ÷ÊÔÊä³ö
+                        // æ·»åŠ ä¸²å£è°ƒè¯•è¾“å‡º
                         sprintf(debug_buffer, "\r\n[CAMERA_MODE] Photo saved, preparing to send over MQTT\r\n");
                         HAL_UART_Transmit(&huart1, (uint8_t*)debug_buffer, strlen(debug_buffer), 300);
                         
-                        // ÉèÖÃMQTT´«ÊäÇëÇó±êÖ¾
+                        // è®¾ç½®MQTTä¼ è¾“è¯·æ±‚æ ‡å¿—
                         mqtt_image_transfer_requested = 1;
                         mqtt_image_transfer_in_progress = 0;
                         
-                        // ÉèÖÃ´«Êä×´Ì¬±êÖ¾
+                        // è®¾ç½®ä¼ è¾“çŠ¶æ€æ ‡å¿—
                         showing_mqtt_transfer = 1;
                         mqtt_transfer_start_time = HAL_GetTick();
                     } else {
-                        // ÏÔÊ¾MQTTÎ´Á¬½ÓÌáÊ¾
+                        // æ˜¾ç¤ºMQTTæœªè¿æ¥æç¤º
                         Display_Message(DEBUG_START_Y + 140, "MQTT not connected, image saved only", YELLOW);
                         
-                        // Ìí¼Ó´®¿Úµ÷ÊÔÊä³ö
+                        // æ·»åŠ ä¸²å£è°ƒè¯•è¾“å‡º
                         sprintf(debug_buffer, "\r\n[CAMERA_MODE] Photo saved, but MQTT not connected\r\n");
                         HAL_UART_Transmit(&huart1, (uint8_t*)debug_buffer, strlen(debug_buffer), 300);
                     }
                 } else {
-                    // ±£´æÊ§°Ü»ò³¬Ê±
-                    Fill_Rectangle(20, 60, 200, 80, RED); // ºìÉ«±³¾°
+                    // ä¿å­˜å¤±è´¥æˆ–è¶…æ—¶
+                    Fill_Rectangle(20, 60, 200, 80, RED); // çº¢è‰²èƒŒæ™¯
                     ST7789_WriteString(30, 70, "SAVE FAILED!", WHITE, RED, 2);
                     sprintf(debug_buffer, "Error: %d", ImageSave_GetError());
                     ST7789_WriteString(45, 100, debug_buffer, WHITE, RED, 1);
                     sprintf(debug_buffer, "Steps: %u", (unsigned int)process_count);
                     ST7789_WriteString(45, 120, debug_buffer, WHITE, RED, 1);
                     
-                    // Ê§°ÜÌáÊ¾Òô
+                    // å¤±è´¥æç¤ºéŸ³
                     Buzzer_Beep_Times(3, 200);
                     
-                    // ÉèÖÃÊ§°ÜºóµÈ´ıÒ»»á¶ù£¬È»ºó¼ÌĞøÔ¤ÀÀ
+                    // è®¾ç½®å¤±è´¥åç­‰å¾…ä¸€ä¼šå„¿ï¼Œç„¶åç»§ç»­é¢„è§ˆ
                     HAL_Delay(3000);
                     DisplayCameraImage(camera_buffer, PIC_WIDTH, PIC_HEIGHT);
                 }
             } else {
-                // ÏµÍ³Ã¦£¬²»ÄÜ±£´æ
+                // ç³»ç»Ÿå¿™ï¼Œä¸èƒ½ä¿å­˜
                 Fill_Rectangle(20, 60, 200, 40, RED);
                 ST7789_WriteString(40, 70, "SYSTEM BUSY", WHITE, RED, 1);
                 Buzzer_Beep_Short();
             }
             
-            // ÖØÖÃÇëÇó±êÖ¾
+            // é‡ç½®è¯·æ±‚æ ‡å¿—
             capture_requested = 0;
         }
         
-        // Ö¡´¦ÀíÍê³É
+        // å¸§å¤„ç†å®Œæˆ
         Display_Message(DEBUG_START_Y + 60, "Frame processed!", GREEN);
         
-        // ÖØÖÃ±êÖ¾
+        // é‡ç½®æ ‡å¿—
         ov_rev_ok = 0;
         
-        // ÖØĞÂÆô¶¯DCMI²¶»ñÏÂÒ»Ö¡
+        // é‡æ–°å¯åŠ¨DCMIæ•è·ä¸‹ä¸€å¸§
         DCMI_Start();
     }
     
-    // ´¦ÀíMQTTÍ¼Ïñ´«ÊäÂß¼­
+    // å¤„ç†MQTTå›¾åƒä¼ è¾“é€»è¾‘
     if (showing_mqtt_transfer) {
-        // ¼ì²éÑÓ³ÙÆô¶¯Ê±¼ä
+        // æ£€æŸ¥å»¶è¿Ÿå¯åŠ¨æ—¶é—´
         if (HAL_GetTick() - mqtt_transfer_start_time > 500) {
-            // ÖØÖÃ´«Êä±êÖ¾
+            // é‡ç½®ä¼ è¾“æ ‡å¿—
             showing_mqtt_transfer = 0;
             
             if (mqtt_image_transfer_requested && !mqtt_image_transfer_in_progress) {
-                // ÉèÖÃ´«Êä½øĞĞÖĞ±êÖ¾
+                // è®¾ç½®ä¼ è¾“è¿›è¡Œä¸­æ ‡å¿—
                 mqtt_image_transfer_in_progress = 1;
                 
-                // ¿ªÊ¼MQTTÍ¼Ïñ´«Êä
+                // å¼€å§‹MQTTå›¾åƒä¼ è¾“
                 SendImageViaMQTT(IMAGE_FILENAME);
                 
-                // Çå³ı±êÖ¾
+                // æ¸…é™¤æ ‡å¿—
                 mqtt_image_transfer_requested = 0;
                 mqtt_image_transfer_in_progress = 0;
             }
             
-            // ´«ÊäÍê³Éºó»Ö¸´Ô¤ÀÀ
-            HAL_Delay(1000); // ¶ÌÔİÏÔÊ¾
+            // ä¼ è¾“å®Œæˆåæ¢å¤é¢„è§ˆ
+            HAL_Delay(1000); // çŸ­æš‚æ˜¾ç¤º
             DisplayCameraImage(camera_buffer, PIC_WIDTH, PIC_HEIGHT);
         }
     }
 }
 
 /**
-  * @brief  ¼ì²éDMA×´Ì¬
+  * @brief  æ£€æŸ¥DMAçŠ¶æ€
   */
 void Check_DMA_Status(void) {
-    // ¶ÁÈ¡DMA×´Ì¬¼Ä´æÆ÷
-    uint32_t dma_isr = DMA2->LISR; // °üº¬×´Ì¬ĞÅÏ¢¼Ä´æÆ÷£¬ÓÃÓÚStream 0-3
+    // è¯»å–DMAçŠ¶æ€å¯„å­˜å™¨
+    uint32_t dma_isr = DMA2->LISR; // åŒ…å«çŠ¶æ€ä¿¡æ¯å¯„å­˜å™¨ï¼Œç”¨äºStream 0-3
     
-    // Stream 1±êÖ¾±êÖ¾
-    uint8_t teif = (dma_isr & DMA_LISR_TEIF1) ? 1 : 0; // ´«Êä´íÎó±êÖ¾
-    uint8_t htif = (dma_isr & DMA_LISR_HTIF1) ? 1 : 0; // °ë´«Êä
-    uint8_t tcif = (dma_isr & DMA_LISR_TCIF1) ? 1 : 0; // ´«ÊäÍê³É
-    uint8_t feif = (dma_isr & DMA_LISR_FEIF1) ? 1 : 0; // FIFO´íÎó
+    // Stream 1æ ‡å¿—æ ‡å¿—
+    uint8_t teif = (dma_isr & DMA_LISR_TEIF1) ? 1 : 0; // ä¼ è¾“é”™è¯¯æ ‡å¿—
+    uint8_t htif = (dma_isr & DMA_LISR_HTIF1) ? 1 : 0; // åŠä¼ è¾“
+    uint8_t tcif = (dma_isr & DMA_LISR_TCIF1) ? 1 : 0; // ä¼ è¾“å®Œæˆ
+    uint8_t feif = (dma_isr & DMA_LISR_FEIF1) ? 1 : 0; // FIFOé”™è¯¯
     
-    // ÏÔÊ¾DMA×´Ì¬
+    // æ˜¾ç¤ºDMAçŠ¶æ€
     sprintf(debug_buffer, "DMA: E:%d H:%d C:%d F:%d", teif, htif, tcif, feif);
     Display_Message(DEBUG_START_Y + 40, debug_buffer, YELLOW);
 }
 
 /**
-  * @brief  ÏÔÊ¾DCMI×´Ì¬
+  * @brief  æ˜¾ç¤ºDCMIçŠ¶æ€
   */
 void Display_DCMI_Status(void) {
-    uint32_t dcmi_cr = hdcmi.Instance->CR;  // ¿ØÖÆ¼Ä´æÆ÷
-    uint32_t dcmi_sr = hdcmi.Instance->SR;  // ×´Ì¬¼Ä´æÆ÷
+    uint32_t dcmi_cr = hdcmi.Instance->CR;  // æ§åˆ¶å¯„å­˜å™¨
+    uint32_t dcmi_sr = hdcmi.Instance->SR;  // çŠ¶æ€å¯„å­˜å™¨
     
-    // ÏÔÊ¾DCMI×´Ì¬
+    // æ˜¾ç¤ºDCMIçŠ¶æ€
     sprintf(debug_buffer, "DCMI CR:0x%02X SR:0x%02X", 
             (unsigned int)(dcmi_cr & 0xFF), 
             (unsigned int)(dcmi_sr & 0xFF));
@@ -1594,7 +1594,7 @@ void Display_DCMI_Status(void) {
 }
 
 /**
-  * @brief  ÏÔÊ¾ÏñËØÔ¤ÀÀ
+  * @brief  æ˜¾ç¤ºåƒç´ é¢„è§ˆ
   */
 void Display_Pixel_Preview(void) {
     if(ov_rev_ok) {
@@ -1606,7 +1606,7 @@ void Display_Pixel_Preview(void) {
 }
 
 /**
-  * @brief  ÏÔÊ¾SD¿¨´æ´¢×´Ì¬
+  * @brief  æ˜¾ç¤ºSDå¡å­˜å‚¨çŠ¶æ€
   */
 void Display_Save_Status(void) {
     const char* state_names[] = {
@@ -1620,10 +1620,10 @@ void Display_Save_Status(void) {
 }
 
 /**
-  * @brief  ÉèÖÃSDIOÖĞ¶ÏÓÅÏÈ¼¶
+  * @brief  è®¾ç½®SDIOä¸­æ–­ä¼˜å…ˆçº§
   */
 void Setup_SDIO_Interrupts(void) {
-    // ÉèÖÃSDIOºÍDMAÖĞ¶ÏÓÅÏÈ¼¶
+    // è®¾ç½®SDIOå’ŒDMAä¸­æ–­ä¼˜å…ˆçº§
     HAL_NVIC_SetPriority(SDIO_IRQn, 5, 0);
     HAL_NVIC_EnableIRQ(SDIO_IRQn);
     
@@ -1635,7 +1635,7 @@ void Setup_SDIO_Interrupts(void) {
 }
 
 /**
-  * @brief  È·±£SD¿¨ÉÏµÄÄ¿Â¼´æÔÚ
+  * @brief  ç¡®ä¿SDå¡ä¸Šçš„ç›®å½•å­˜åœ¨
   */
 void EnsureSDCardDirectory(void) {
   FRESULT res;
@@ -1657,84 +1657,84 @@ void EnsureSDCardDirectory(void) {
 }
 
 /**
-  * @brief  GPIO³õÊ¼»¯
+  * @brief  GPIOåˆå§‹åŒ–
   */
 void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
   
-  // Ê¹ÄÜGPIO¶Ë¿ÚÊ±ÖÓ
+  // ä½¿èƒ½GPIOç«¯å£æ—¶é’Ÿ
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
-  // ³õÊ¼»¯±ØÒªµÄÊä³öÒı½Å
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET); // LEDÒı½Å
+  // åˆå§‹åŒ–å¿…è¦çš„è¾“å‡ºå¼•è„š
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET); // LEDå¼•è„š
   
-  // ÅäÖÃLEDÊä³öÒı½Å
+  // é…ç½®LEDè¾“å‡ºå¼•è„š
   GPIO_InitStruct.Pin = GPIO_PIN_5;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
   
-  // ³õÊ¼»¯°´Å¥
+  // åˆå§‹åŒ–æŒ‰é’®
   Button_Init();
 }
 
 /**
-  * @brief  Ö÷Èë¿Úµã
+  * @brief  ä¸»å…¥å£ç‚¹
   * @retval int
   */
 int main(void)
 {
-  // ÏµÍ³³õÊ¼»¯
+  // ç³»ç»Ÿåˆå§‹åŒ–
   HAL_Init();
   SystemClock_Config();
   
-  // ³õÊ¼»¯ÑÓÊ±
+  // åˆå§‹åŒ–å»¶æ—¶
   delay_init();
   
-  // ³õÊ¼»¯LCD
+  // åˆå§‹åŒ–LCD
   ST7789_Init();
   ST7789_FillScreen(BLACK);
   
-  // ÏÔÊ¾Æô¶¯¶¯»­²¢Ö´ĞĞËùÓĞ³õÊ¼»¯
+  // æ˜¾ç¤ºå¯åŠ¨åŠ¨ç”»å¹¶æ‰§è¡Œæ‰€æœ‰åˆå§‹åŒ–
   uint8_t init_status = ShowBootAnimationAndInit();
   
-  // ÔÚÆô¶¯DCMIÍ¼Ïñ²É¼¯Ç°ÏÈÏÔÊ¾²ÎÊıÆÁÄ»
+  // åœ¨å¯åŠ¨DCMIå›¾åƒé‡‡é›†å‰å…ˆæ˜¾ç¤ºå‚æ•°å±å¹•
   DisplayParameterScreen();
   
-  // Æô¶¯DCMIÍ¼Ïñ²É¼¯
+  // å¯åŠ¨DCMIå›¾åƒé‡‡é›†
   DCMI_Start();
   
-  // Ö÷Ñ­»·
+  // ä¸»å¾ªç¯
   uint32_t last_update = 0;
   uint32_t loop_counter = 0;
   uint32_t mqtt_status_check_time = 0;
   
-  // ÉèÖÃ³õÊ¼Ä£Ê½
+  // è®¾ç½®åˆå§‹æ¨¡å¼
   currentSystemState = SYSTEM_STATE_PARAM_DISPLAY;
   
-  // ¸üĞÂÒ»´Î¾àÀë´«¸ĞÆ÷¶ÁÊı£¬±£Ö¤²ÎÊıÒ³ÃæÓĞÊı¾İÏÔÊ¾
+  // æ›´æ–°ä¸€æ¬¡è·ç¦»ä¼ æ„Ÿå™¨è¯»æ•°ï¼Œä¿è¯å‚æ•°é¡µé¢æœ‰æ•°æ®æ˜¾ç¤º
   frontDistance = HC_SR04_ReadDistance(HC_SR04_FRONT);
   sideDistance = HC_SR04_ReadDistance(HC_SR04_SIDE);
   UpdateDistanceDisplay();
   
-  // µ÷ÊÔĞÅÏ¢
+  // è°ƒè¯•ä¿¡æ¯
   sprintf(debug_buffer, "System ready (%02X)", init_status);
   DisplayDebugInfo(debug_buffer);
   
-  // Ìí¼Ó´®¿Úµ÷ÊÔÊä³ö
+  // æ·»åŠ ä¸²å£è°ƒè¯•è¾“å‡º
   sprintf(debug_buffer, "\r\n[MAIN] System initialized and ready\r\n");
   HAL_UART_Transmit(&huart1, (uint8_t*)debug_buffer, strlen(debug_buffer), 300);
   
-  // MQTT×´Ì¬ĞÅÏ¢
+  // MQTTçŠ¶æ€ä¿¡æ¯
   if (mqtt_connected) {
       sprintf(debug_buffer, "[MAIN] MQTT is connected to broker\r\n");
       HAL_UART_Transmit(&huart1, (uint8_t*)debug_buffer, strlen(debug_buffer), 300);
       
-      // ·¢²¼ÏµÍ³¾ÍĞ÷×´Ì¬
+      // å‘å¸ƒç³»ç»Ÿå°±ç»ªçŠ¶æ€
       Integration_PublishStatus("system_ready");
   } else {
       sprintf(debug_buffer, "[MAIN] MQTT is not connected\r\n");
@@ -1742,18 +1742,18 @@ int main(void)
   }
   
   while(1) {
-    // ¼ÆÊıÖ÷Ñ­»·µü´ú
+    // è®¡æ•°ä¸»å¾ªç¯è¿­ä»£
     loop_counter++;
     
-    // ´¦Àí°´Å¥ÊÂ¼ş
+    // å¤„ç†æŒ‰é’®äº‹ä»¶
     ProcessButton();
     
-    // »ùÓÚµ±Ç°×´Ì¬¸üĞÂ
+    // åŸºäºå½“å‰çŠ¶æ€æ›´æ–°
     if (currentSystemState == SYSTEM_STATE_PARAM_DISPLAY) {
       ParameterDisplayModeUpdate();
       
-      // ÔÚ²ÎÊıÏÔÊ¾Ä£Ê½ÏÂ£¬¶¨ÆÚ¼ì²éMQTT×´Ì¬ºÍ´¦ÀíÃüÁî
-      if (HAL_GetTick() - mqtt_status_check_time > 5000) { // Ã¿5Ãë¼ì²éÒ»´Î
+      // åœ¨å‚æ•°æ˜¾ç¤ºæ¨¡å¼ä¸‹ï¼Œå®šæœŸæ£€æŸ¥MQTTçŠ¶æ€å’Œå¤„ç†å‘½ä»¤
+      if (HAL_GetTick() - mqtt_status_check_time > 5000) { // æ¯5ç§’æ£€æŸ¥ä¸€æ¬¡
         mqtt_status_check_time = HAL_GetTick();
         
         if (wifiConnected) {
@@ -1765,55 +1765,55 @@ int main(void)
       CameraModeUpdate();
     }
     
-    // Ã¿500ms¸üĞÂÒ»´Î×´Ì¬ĞÅÏ¢
+    // æ¯500msæ›´æ–°ä¸€æ¬¡çŠ¶æ€ä¿¡æ¯
     if(HAL_GetTick() - last_update > 500) {
       last_update = HAL_GetTick();
       
       if (currentSystemState == SYSTEM_STATE_CAMERA_MODE) {
-        // ÔÚÏà»úÄ£Ê½ÏÂÏÔÊ¾Ö¡¼ÆÊı
+        // åœ¨ç›¸æœºæ¨¡å¼ä¸‹æ˜¾ç¤ºå¸§è®¡æ•°
         sprintf(debug_buffer, "Frames: %u  Loops: %u", 
                 (unsigned int)frame_counter, 
                 (unsigned int)loop_counter);
         Display_Message(DEBUG_START_Y, debug_buffer, WHITE);
         
-        // ÏÔÊ¾OK±êÖ¾ºÍdatanum
+        // æ˜¾ç¤ºOKæ ‡å¿—å’Œdatanum
         sprintf(debug_buffer, "OK: %d  DataNum: %u", 
                 ov_rev_ok, (unsigned int)datanum);
         Display_Message(DEBUG_START_Y + 10, debug_buffer, GREEN);
         
-        // ¸üĞÂDCMIºÍDMA×´Ì¬
+        // æ›´æ–°DCMIå’ŒDMAçŠ¶æ€
         Display_DCMI_Status();
         Check_DMA_Status();
         
-        // ÏÔÊ¾ÏñËØÄÚÈİ
+        // æ˜¾ç¤ºåƒç´ å†…å®¹
         Display_Pixel_Preview();
         
-        // ¼ì²éDCMIÊÇ·ñÈÔÔÚÔËĞĞ
+        // æ£€æŸ¥DCMIæ˜¯å¦ä»åœ¨è¿è¡Œ
         uint8_t dcmi_running = (hdcmi.Instance->CR & DCMI_CR_CAPTURE) != 0;
         if(!dcmi_running && !ov_rev_ok) {
-          // DCMIÃ»ÓĞÔËĞĞ£¬ÖØĞÂÆô¶¯
+          // DCMIæ²¡æœ‰è¿è¡Œï¼Œé‡æ–°å¯åŠ¨
           Display_Message(DEBUG_START_Y + 70, "DCMI not running, restarting...", RED);
           DCMI_Start();
           Display_Message(DEBUG_START_Y + 70, "DCMI restarted", GREEN);
-          Buzzer_Beep_Short(); // ÖØÆôÌáÊ¾Òô
+          Buzzer_Beep_Short(); // é‡å¯æç¤ºéŸ³
         }
       }
     }
     
-    // ³É¹¦ÅÄÕÕÏÔÊ¾3ÃëºóÒş²ØÌáÊ¾¿ò²¢»Ö¸´Í¼Ïñ
+    // æˆåŠŸæ‹ç…§æ˜¾ç¤º3ç§’åéšè—æç¤ºæ¡†å¹¶æ¢å¤å›¾åƒ
     if (photo_saved_success && (HAL_GetTick() - success_display_time > 3000)) {
       photo_saved_success = 0;
-      // ÖØĞÂÏÔÊ¾ÉãÏñÍ·ÄÚÈİ
+      // é‡æ–°æ˜¾ç¤ºæ‘„åƒå¤´å†…å®¹
       DisplayCameraImage(camera_buffer, PIC_WIDTH, PIC_HEIGHT);
-      Buzzer_Beep_Short(); // ÌáÊ¾Òô
+      Buzzer_Beep_Short(); // æç¤ºéŸ³
     }
     
-    HAL_Delay(1); // ¶ÌÑÓÊ±¼õÉÙÑ­»·¸ºÔØ
+    HAL_Delay(1); // çŸ­å»¶æ—¶å‡å°‘å¾ªç¯è´Ÿè½½
   }
 }
 
 /**
-  * @brief  ´íÎó´¦Àíº¯Êı
+  * @brief  é”™è¯¯å¤„ç†å‡½æ•°
   */
 void Error_Handler(void)
 {
@@ -1822,11 +1822,11 @@ void Error_Handler(void)
   ST7789_FillScreen(RED);
   ST7789_WriteString(10, 120, "SYSTEM ERROR!", WHITE, RED, 2);
   
-  Buzzer_Beep_Times(5, 100); // ´íÎóÌáÊ¾Òô
+  Buzzer_Beep_Times(5, 100); // é”™è¯¯æç¤ºéŸ³
   
   HAL_Delay(3000);
   
-  // ÏµÍ³¸´Î»
+  // ç³»ç»Ÿå¤ä½
   NVIC_SystemReset();
   
   while (1)
@@ -1834,59 +1834,59 @@ void Error_Handler(void)
   } 
 }
 
-// BSPĞ´ÈëÍê³É»Øµ÷
+// BSPå†™å…¥å®Œæˆå›è°ƒ
 void BSP_SD_WriteCpltCallback(void)
 {
     SD_DMA_TxComplete();
 }
 
-// BSPÖĞ¶Ï»Øµ÷
+// BSPä¸­æ–­å›è°ƒ
 void BSP_SD_AbortCallback(void)
 {
     SD_DMA_TxError();
 }
 
-// SD¿¨DMA´«ÊäÖĞ¶Ï´¦Àí
+// SDå¡DMAä¼ è¾“ä¸­æ–­å¤„ç†
 void BSP_SD_DMA_Tx_IRQHandler(void)
 {
     extern SD_HandleTypeDef uSdHandle;
     HAL_DMA_IRQHandler(uSdHandle.hdmatx);
 }
 
-// SD¿¨SDIOÖĞ¶Ï´¦Àí
+// SDå¡SDIOä¸­æ–­å¤„ç†
 void BSP_SD_IRQHandler(void)
 {
     extern SD_HandleTypeDef uSdHandle;
     HAL_SD_IRQHandler(&uSdHandle);
 }
 
-// MQTTÃüÁî½ÓÊÕ»Øµ÷º¯Êı
+// MQTTå‘½ä»¤æ¥æ”¶å›è°ƒå‡½æ•°
 void MQTT_CommandCallback(const char* command)
 {
-    // ½«ÃüÁî±£´æµ½È«¾Ö»º³åÇø
+    // å°†å‘½ä»¤ä¿å­˜åˆ°å…¨å±€ç¼“å†²åŒº
     strncpy(command_buffer, command, sizeof(command_buffer)-1);
     command_buffer[sizeof(command_buffer)-1] = '\0';
     
-    // ÉèÖÃÃüÁî½ÓÊÕ±êÖ¾
+    // è®¾ç½®å‘½ä»¤æ¥æ”¶æ ‡å¿—
     command_received = 1;
     
-    // Ìí¼Ó´®¿Úµ÷ÊÔÊä³ö
+    // æ·»åŠ ä¸²å£è°ƒè¯•è¾“å‡º
     sprintf(debug_buffer, "[MQTT] Command received: %s\r\n", command);
     HAL_UART_Transmit(&huart1, (uint8_t*)debug_buffer, strlen(debug_buffer), 300);
     
-    // ¸ù¾İÃüÁîÄÚÈİ½øĞĞ²»Í¬µÄ²Ù×÷
+    // æ ¹æ®å‘½ä»¤å†…å®¹è¿›è¡Œä¸åŒçš„æ“ä½œ
     if (strstr(command, "capture") != NULL) {
-        // Èç¹ûÊÇÅÄÕÕÃüÁîÇÒµ±Ç°ÔÚÏà»úÄ£Ê½£¬ÔòÉèÖÃÅÄÕÕÇëÇó±êÖ¾
+        // å¦‚æœæ˜¯æ‹ç…§å‘½ä»¤ä¸”å½“å‰åœ¨ç›¸æœºæ¨¡å¼ï¼Œåˆ™è®¾ç½®æ‹ç…§è¯·æ±‚æ ‡å¿—
         if (currentSystemState == SYSTEM_STATE_CAMERA_MODE) {
             capture_requested = 1;
-            // ·¢ËÍÈ·ÈÏÏûÏ¢
+            // å‘é€ç¡®è®¤æ¶ˆæ¯
             Integration_PublishStatus("capture_requested");
         } else {
-            // Èç¹û²»ÔÚÏà»úÄ£Ê½£¬·¢ËÍ´íÎóĞÅÏ¢
+            // å¦‚æœä¸åœ¨ç›¸æœºæ¨¡å¼ï¼Œå‘é€é”™è¯¯ä¿¡æ¯
             Integration_PublishStatus("error_not_in_camera_mode");
         }
     } else if (strstr(command, "status") != NULL) {
-        // Èç¹ûÊÇ×´Ì¬²éÑ¯ÃüÁî£¬·¢ËÍµ±Ç°ÏµÍ³×´Ì¬
+        // å¦‚æœæ˜¯çŠ¶æ€æŸ¥è¯¢å‘½ä»¤ï¼Œå‘é€å½“å‰ç³»ç»ŸçŠ¶æ€
         char status_data[256];
         sprintf(status_data, "{\"mode\":\"%s\",\"wifi\":%d,\"mqtt\":%d,\"sd_card\":%d}", 
                 currentSystemState == SYSTEM_STATE_CAMERA_MODE ? "camera" : "parameter",
@@ -1896,7 +1896,7 @@ void MQTT_CommandCallback(const char* command)
 }
 
 /**
-  * @brief  ÏµÍ³Ê±ÖÓÅäÖÃ
+  * @brief  ç³»ç»Ÿæ—¶é’Ÿé…ç½®
   */
 void SystemClock_Config(void)
 {
@@ -1918,7 +1918,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLM = 8;
   RCC_OscInitStruct.PLL.PLLN = 168;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
-  RCC_OscInitStruct.PLL.PLLQ = 7; // ·ÖÆµÎª7µÃµ½48MHzÊ±ÖÓÓÃÓÚSDIO
+  RCC_OscInitStruct.PLL.PLLQ = 7; // åˆ†é¢‘ä¸º7å¾—åˆ°48MHzæ—¶é’Ÿç”¨äºSDIO
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
       while(1);
@@ -1938,6 +1938,6 @@ void SystemClock_Config(void)
       while(1);
   }
   
-  /* ÅäÖÃMCO1Êä³öHSIÊ±ÖÓ×÷ÎªÏà»úµÄXCLK */
+  /* é…ç½®MCO1è¾“å‡ºHSIæ—¶é’Ÿä½œä¸ºç›¸æœºçš„XCLK */
   HAL_RCC_MCOConfig(RCC_MCO1, RCC_MCO1SOURCE_HSI, RCC_MCODIV_4);
 }
