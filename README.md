@@ -46,7 +46,8 @@
 1. **下载项目**
 
 2. **STM32CubeMX配置**
-   - 如需要配置STM32CubeMX，可直接打开.ioc进行配置
+   - 此步骤可以省略
+   - 如需要配置STM32CubeMX，可直接打开STM32F407-Accessibility-Assistance-System.ioc进行配置
 
 3. **需要修改的地方**
 
@@ -67,7 +68,7 @@
 #define WIFI_PASSWORD "" // 请在引号之间输入WiFi密码
 ```
 
-**打开STM32F407-Accessibility-Assistance-System.py文件并定位到以下位置修改API密钥配置**(用于百度AI图片识别)
+**打开STM32F407-Accessibility-Assistance-System.py文件并定位到以下位置修改API密钥配置** (用于百度AI图片识别)
 
 ```python
 self.api_key = tk.StringVar(value="")     # 请在引号之间输入百度AI提供的api_key
@@ -76,7 +77,7 @@ self.mqtt_broker = tk.StringVar(value="") # 请在引号之间输入MQTT服务�
 ```
 
 4. **编译烧录**
-   - 使用Keil MDK打开项目
+   - 使用Keil MDK打开项目或者直接打开STM32F407-Accessibility-Assistance-System.uvprojx
    - 连接ST-Link调试器
    - 按F7编译
    - 按F8下载到STM32板
