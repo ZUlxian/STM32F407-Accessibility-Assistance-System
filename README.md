@@ -138,9 +138,8 @@ graph TD
 
 3. **需要修改的地方**
 
-**mqtt.h文件配置** (ESP8266与MQTT服务器进行连接通信)
+**mqtt.h文件配置** 请修改MQTT服务器配置信息(ESP8266与MQTT服务器进行连接通信)
 
-请修改以下MQTT服务器配置信息：
 ```c
 #define MQTT_BROKER ""    // 请在引号之间输入MQTT服务器地址
 #define MQTT_PORT 1883    // 标准MQTT端口，若需要使用SSL加密连接则修改为8883
@@ -149,17 +148,15 @@ graph TD
 #define MQTT_PASSWORD ""  // 请在引号之间输入密码，可以不填
 ```
 
-**esp8266.h文件配置** (ESP8266连接到你的WIFI)
+**esp8266.h文件配置** 请修改WiFi连接配置(ESP8266连接到你的WIFI)
 
-请修改WiFi连接配置：
 ```c
 #define WIFI_SSID ""     // 请在引号之间输入WiFi名称
 #define WIFI_PASSWORD "" // 请在引号之间输入WiFi密码
 ```
 
-**STM32F407-Accessibility-Assistance-System.py文件配置**
+**STM32F407-Accessibility-Assistance-System.py文件配置**请修改API密钥配置(用于百度AI图片识别)
 
-请修改API密钥配置：
 ```python
 self.api_key = tk.StringVar(value="")     # 请在引号之间输入百度AI提供的api_key
 self.secret_key = tk.StringVar(value="")  # 请在引号之间输入百度AI提供的secret_key
