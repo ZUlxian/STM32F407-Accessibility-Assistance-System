@@ -84,6 +84,11 @@ self.mqtt_broker = tk.StringVar(value="") # 请在引号之间输入MQTT服务�
 ---
 
 ## ⚙️ 硬件连接
+
+### ESP8266 WiFi模块
+| ESP8266引脚 | STM32引脚 | 功能描述 |
+|------------|-----------|----------|
+| TX | PA10 | 串口通信(ESP→STM32) |
 | RX | PA9 | 串口通信(STM32→ESP) |
 | GND | GND | 共地 |
 | 3V | 3.3V | 电源供电 |
