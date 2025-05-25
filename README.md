@@ -14,44 +14,76 @@
 本项目为本人制作了两个多月的毕业设计，目的是为了探究特殊群体的无障碍需求，因此该项目是以科学探究为主，而不是为了做消费级产品，也就是说成品效果只能说是能用但不好用，或者换句话说该项目更多像是概念型产品，旨在为之后的盲人无障碍辅助系统研究提供一个方向。
 
 ---
-## 🛠️ 系统工作流程
 
-```mermaid
-graph TD
-    A[系统启动] --> B[硬件初始化]
-    B --> C[WiFi连接]
-    C --> D[进入监控模式]
-    
-    D --> E[HC-SR04检测]
-    E --> F{检测到障碍物?}
-    F -->|是| G[距离判断]
-    F -->|否| E
-    
-    G --> H{距离等级}
-    H -->|近距离<20cm| I[高频警报+强振动]
-    H -->|中距离20-50cm| J[连续警报+普通振动]
-    H -->|远距离50-100cm| K[间断提醒+轻微振动]
-    
-    D --> L[用户按键触发]
-    L --> M[OV7670拍照]
-    M --> N[图像上传至云端]
-    N --> O[百度AI识别]
-    O --> P[TTS语音合成]
-    P --> Q[音频下载播放]
-    
-    I --> E
-    J --> E
-    K --> E
-    Q --> D
+## 🚀 傻瓜式教你如何部署
+
+### 📋 环境要求
+
+**需要购买的硬件:**
+- STM32F407ZGT6开发板
+- HC-SR04
+- ESP8266
+- OV7670(无FIFO)
+- MAX98357
+- ST7789
+- XL6009 DC-DC可调升压模块
+- TP4056充电模块
+- 103450锂电池
+- ST-LINK V2
+- 有源蜂鸣器
+- 振动马达
+- SD卡
+- 按钮
+- 面包板
+
+**软件环境:**
+- STM32CubeMX (最新版本)
+- Keil MDK-ARM V5.32+
+- HAL库支持
+
+### ⚡ 编译部署
+
+1. **下载项目**
+
+2. **STM32CubeMX配置**
+   - 如需要配置STM32CubeMX，可直接打开.ioc进行配置
+
+3. **需要修改的地方**
+
+**打开mqtt.h文件并定位到以下位置修改MQTT服务器配置信息** (ESP8266与MQTT服务器进行连接通信)
+
+```c
+#define MQTT_BROKER ""    // 请在引号之间输入MQTT服务器地址
+#define MQTT_PORT 1883    // 标准MQTT端口，若需要使用SSL加密连接则修改为8883
+#define MQTT_CLIENT_ID "" // 请在引号之间输入客户端ID
+#define MQTT_USERNAME ""  // 请在引号之间输入用户名，可以不填
+#define MQTT_PASSWORD ""  // 请在引号之间输入密码，可以不填
 ```
+
+**打开esp8266.h文件并定位到以下位置修改WiFi连接配置** (ESP8266连接到你的WIFI)
+
+```c
+#define WIFI_SSID ""     // 请在引号之间输入WiFi名称
+#define WIFI_PASSWORD "" // 请在引号之间输入WiFi密码
+```
+
+**打开STM32F407-Accessibility-Assistance-System.py文件并定位到以下位置修改API密钥配置**(用于百度AI图片识别)
+
+```python
+self.api_key = tk.StringVar(value="")     # 请在引号之间输入百度AI提供的api_key
+self.secret_key = tk.StringVar(value="")  # 请在引号之间输入百度AI提供的secret_key
+self.mqtt_broker = tk.StringVar(value="") # 请在引号之间输入MQTT服务器地址
+```
+
+4. **编译烧录**
+   - 使用Keil MDK打开项目
+   - 连接ST-Link调试器
+   - 按F7编译
+   - 按F8下载到STM32板
+
 ---
 
 ## ⚙️ 硬件连接
-
-### ESP8266 WiFi模块
-| ESP8266引脚 | STM32引脚 | 功能描述 |
-|------------|-----------|----------|
-| TX | PA10 | 串口通信(ESP→STM32) |
 | RX | PA9 | 串口通信(STM32→ESP) |
 | GND | GND | 共地 |
 | 3V | 3.3V | 电源供电 |
@@ -103,75 +135,39 @@ graph TD
 
 ---
 
-## 🚀 傻瓜式教你如何部署
+## 🛠️ 系统工作流程
 
-### 📋 环境要求
-
-**需要购买的硬件:**
-- STM32F407ZGT6开发板
-- HC-SR04
-- ESP8266
-- OV7670(无FIFO)
-- MAX98357
-- ST7789
-- XL6009 DC-DC可调升压模块
-- TP4056充电模块
-- 103450锂电池
-- ST-LINK V2
-- 有源蜂鸣器
-- 振动马达
-- SD卡
-- 按钮
-- 面包板
-
-**软件环境:**
-- STM32CubeMX (最新版本)
-- Keil MDK-ARM V5.32+
-- HAL库支持
-
-### ⚡ 编译部署
-
-1. **下载项目**
-
-2. **STM32CubeMX配置**
-   - 如需要配置STM32CubeMX，可直接打开.ioc进行配置
-
-3. **需要修改的地方**
-
-**mqtt.h文件配置** 请修改MQTT服务器配置信息(ESP8266与MQTT服务器进行连接通信)
-
-```c
-#define MQTT_BROKER ""    // 请在引号之间输入MQTT服务器地址
-#define MQTT_PORT 1883    // 标准MQTT端口，若需要使用SSL加密连接则修改为8883
-#define MQTT_CLIENT_ID "" // 请在引号之间输入客户端ID
-#define MQTT_USERNAME ""  // 请在引号之间输入用户名，可以不填
-#define MQTT_PASSWORD ""  // 请在引号之间输入密码，可以不填
+```mermaid
+graph TD
+    A[系统启动] --> B[硬件初始化]
+    B --> C[WiFi连接]
+    C --> D[进入监控模式]
+    
+    D --> E[HC-SR04检测]
+    E --> F{检测到障碍物?}
+    F -->|是| G[距离判断]
+    F -->|否| E
+    
+    G --> H{距离等级}
+    H -->|近距离<20cm| I[高频警报+强振动]
+    H -->|中距离20-50cm| J[连续警报+普通振动]
+    H -->|远距离50-100cm| K[间断提醒+轻微振动]
+    
+    D --> L[用户按键触发]
+    L --> M[OV7670拍照]
+    M --> N[图像上传至云端]
+    N --> O[百度AI识别]
+    O --> P[TTS语音合成]
+    P --> Q[音频下载播放]
+    
+    I --> E
+    J --> E
+    K --> E
+    Q --> D
 ```
-
-**esp8266.h文件配置** 请修改WiFi连接配置(ESP8266连接到你的WIFI)
-
-```c
-#define WIFI_SSID ""     // 请在引号之间输入WiFi名称
-#define WIFI_PASSWORD "" // 请在引号之间输入WiFi密码
-```
-
-**STM32F407-Accessibility-Assistance-System.py文件配置**请修改API密钥配置(用于百度AI图片识别)
-
-```python
-self.api_key = tk.StringVar(value="")     # 请在引号之间输入百度AI提供的api_key
-self.secret_key = tk.StringVar(value="")  # 请在引号之间输入百度AI提供的secret_key
-self.mqtt_broker = tk.StringVar(value="") # 请在引号之间输入MQTT服务器地址
-```
-
-4. **编译烧录**
-   - 使用Keil MDK打开项目
-   - 连接ST-Link调试器
-   - 按F7编译
-   - 按F8下载到STM32板
+---
 
 ## 🛣️ 开发路线
-
----
 
 ### ✅ 已完成功能
 - [x] STM32硬件驱动开发
